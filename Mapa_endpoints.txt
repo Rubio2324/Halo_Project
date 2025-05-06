@@ -1,0 +1,16 @@
+Método,Endpoint,Descripción
+POST,/player,Crear un nuevo jugador
+GET,/player,Obtener todos los jugadores
+GET,/player/{player_id},Obtener un jugador por su ID
+PUT,/player/{player_id},Modificar un jugador existente
+DELETE,/player/{player_id},Eliminar un jugador por su ID
+GET,/player/filter/{team},Filtrar jugadores por equipo
+GET,/player/search/{gamertag},Buscar jugador por gamertag
+POST,/team,Crear un nuevo equipo
+GET,/team,Obtener todos los equipos
+GET,/team/{team_id},Obtener un equipo por su ID
+PUT,/team/{team_id},Modificar un equipo existente
+DELETE,/team/{team_id},Eliminar un equipo por su ID
+GET,/team/filter/{region},Filtrar equipos por región
+GET,/team/search/{name},Buscar un equipo por nombre
+GET,/error,Lanzar una excepción para pruebas
