@@ -1,87 +1,52 @@
-import csv
-from typing import Optional, List
-from models_player import Team, TeamWithID, UpdatedTeam
+# operations_team.py
+from sqlmodel import Session, select
+from typing import List, Optional
+from models_team import Team, UpdatedTeam
 
-FILENAME = "team.csv"
-DELETED_FILENAME = "deleted_teams.csv"
-FIELDS = ["id", "name", "region", "championships"]
+# Obtener todos los equipos
+def get_all_teams(session: Session) -> List[Team]:
+    return session.exec(select(Team)).all()
 
-def read_all_teams() -> List[TeamWithID]:
-    with open(FILENAME) as f:
-        reader = csv.DictReader(f)
-        return [TeamWithID(**row) for row in reader]
+# Obtener equipo por ID
+def read_team_by_id(team_id: int, session: Session) -> Optional[Team]:
+    return session.get(Team, team_id)
 
-def read_team_by_id(team_id: int) -> Optional[TeamWithID]:
-    for team in read_all_teams():
-        if team.id == team_id:
-            return team
+# Crear nuevo equipo
+def new_team(team: Team, session: Session) -> Team:
+    session.add(team)
+    session.commit()
+    session.refresh(team)
+    return team
 
-def get_next_id() -> int:
-    try:
-        teams = read_all_teams()
-        return max(t.id for t in teams) + 1
-    except:
-        return 1
+# Modificar equipo
+def modify_team(team_id: int, update: UpdatedTeam, session: Session) -> Optional[Team]:
+    db_team = session.get(Team, team_id)
+    if not db_team:
+        return None
 
-def write_team(team: TeamWithID):
-    with open(FILENAME, mode="a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDS)
-        writer.writerow(team.model_dump())
+    update_data = update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_team, key, value)
 
-def new_team(team: Team) -> TeamWithID:
-    id = get_next_id()
-    team_with_id = TeamWithID(id=id, **team.model_dump())
-    write_team(team_with_id)
-    return team_with_id
+    session.add(db_team)
+    session.commit()
+    session.refresh(db_team)
+    return db_team
 
-def modify_team(team_id: int, update: UpdatedTeam) -> Optional[TeamWithID]:
-    teams = read_all_teams()
-    updated = None
+# Eliminar equipo
+def delete_team(team_id: int, session: Session) -> Optional[Team]:
+    team = session.get(Team, team_id)
+    if not team:
+        return None
 
-    for i, t in enumerate(teams):
-        if t.id == team_id:
-            updated_data = t.model_dump()
-            for field, value in update.model_dump(exclude_none=True).items():
-                updated_data[field] = value
-            updated = TeamWithID(**updated_data)
-            teams[i] = updated
-            break
+    session.delete(team)
+    session.commit()
+    return team
 
-    if updated:
-        with open(FILENAME, mode="w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=FIELDS)
-            writer.writeheader()
-            for t in teams:
-                writer.writerow(t.model_dump())
-        return updated
+# Buscar por nombre exacto
+def search_team_by_name(name: str, session: Session) -> Optional[Team]:
+    return session.exec(select(Team).where(Team.name.ilike(name))).first()
 
-def delete_team(team_id: int) -> Optional[TeamWithID]:
-    teams = read_all_teams()
-    deleted = None
-    with open(FILENAME, mode="w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDS)
-        writer.writeheader()
-        for t in teams:
-            if t.id == team_id:
-                deleted = t
-                continue
-            writer.writerow(t.model_dump())
-
-    if deleted:
-        # Guardar el eliminado para trazabilidad
-        with open(DELETED_FILENAME, mode="a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=FIELDS)
-            writer.writerow(deleted.model_dump())
-
-    return deleted
-
-#  Buscar por nombre exacto
-def search_team_by_name(name: str) -> Optional[TeamWithID]:
-    for t in read_all_teams():
-        if t.name.lower() == name.lower():
-            return t
-
-#  Filtrar por región
-def filter_teams_by_region(region: str) -> List[TeamWithID]:
-    return [t for t in read_all_teams() if t.region.lower() == region.lower()]
-
+# Filtrar por región
+def filter_teams_by_region(region: str, session: Session) -> List[Team]:
+    return session.exec(select(Team).where(Team.region.ilike(region))).all()

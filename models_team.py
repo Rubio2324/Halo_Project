@@ -1,16 +1,14 @@
-from pydantic import BaseModel
+from sqlmodel import SQLModel, Field
 from typing import Optional
 
-# === MODELO EQUIPO ===
-class Team(BaseModel):
+# === MODELOS EQUIPO ===
+class Team(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     region: str
     championships: int
 
-class TeamWithID(Team):
-    id: int
-
-class UpdatedTeam(BaseModel):
+class UpdatedTeam(SQLModel):
     name: Optional[str] = None
     region: Optional[str] = None
     championships: Optional[int] = None

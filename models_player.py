@@ -1,32 +1,23 @@
-from pydantic import BaseModel
+from sqlmodel import SQLModel, Field
 from typing import Optional
 
-class Player(BaseModel):
+# === MODELOS JUGADOR ===
+class PlayerCreate(SQLModel):
+    name: str
+    nickname: str
+    team_id: Optional[int] = None
+
+class Player(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     gamertag: str
     team: str
     kills: int
     deaths: int
 
-class PlayerWithID(Player):
-    id: int
-
-class Team(BaseModel):
-    name: str
-    region: str
-    championships: int
-
-class TeamWithID(Team):
-    id: int
-
-class UpdatedPlayer(BaseModel):
+class UpdatedPlayer(SQLModel):
     name: Optional[str] = None
     gamertag: Optional[str] = None
     team: Optional[str] = None
     kills: Optional[int] = None
     deaths: Optional[int] = None
-
-class UpdatedTeam(BaseModel):
-    name: Optional[str] = None
-    region: Optional[str] = None
-    championships: Optional[int] = None

@@ -1,69 +1,59 @@
-import csv
-from models_player import Player, PlayerWithID, UpdatedPlayer
-from typing import Optional
+# operations_player.py
+from sqlmodel import Session, select
+from typing import List, Optional
+from models_player import Player, UpdatedPlayer,PlayerCreate
+from db import get_session
+from fastapi import HTTPException
+from models_team import Team
+from operations_team import get_all_teams
 
-FILENAME = "player.csv"
-FIELDS = ["id", "name", "gamertag", "team", "kills", "deaths"]
 
-def read_all_players():
-    with open(FILENAME) as f:
-        reader = csv.DictReader(f)
-        return [PlayerWithID(**row) for row in reader]
+# Obtener todos los jugadores
+def read_all_players(session: Session) -> List[Player]:
+    return session.exec(select(Player)).all()
 
-def read_player_by_id(player_id: int):
-    for player in read_all_players():
-        if player.id == player_id:
-            return player
+# Obtener jugador por ID
+def read_player_by_id(player_id: int, session: Session) -> Optional[Player]:
+    return session.get(Player, player_id)
 
-def get_next_id():
-    try:
-        players = read_all_players()
-        return max(p.id for p in players) + 1
-    except:
-        return 1
+# Crear nuevo jugador
+def create_player(player: PlayerCreate):
+    # Obtener todos los equipos disponibles
+    teams = get_all_teams()
 
-def write_player(player: PlayerWithID):
-    with open(FILENAME, mode="a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDS)
-        writer.writerow(player.model_dump())
+    # Verificar si el team_name existe
+    if player.team_name not in [team.name for team in teams]:
+        raise HTTPException(status_code=400, detail="El equipo no existe")
 
-def new_player(player: Player):
-    id = get_next_id()
-    player_with_id = PlayerWithID(id=id, **player.model_dump())
-    write_player(player_with_id)
-    return player_with_id
+    # Guardar jugador si todo está bien
+    with get_session() as session:
+        db_player = Player.from_orm(player)
+        session.add(db_player)
+        session.commit()
+        session.refresh(db_player)
+        return db_player
 
-def modify_player(player_id: int, update: UpdatedPlayer):
-    players = read_all_players()
-    updated = None
+# Modificar jugador
+def modify_player(player_id: int, update: UpdatedPlayer, session: Session) -> Optional[Player]:
+    db_player = session.get(Player, player_id)
+    if not db_player:
+        return None
 
-    for i, p in enumerate(players):
-        if p.id == player_id:
-            updated_data = p.model_dump()
-            for field, value in update.model_dump(exclude_none=True).items():
-                updated_data[field] = value
-            updated = PlayerWithID(**updated_data)
-            players[i] = updated
-            break
+    update_data = update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_player, key, value)
 
-    if updated:
-        with open(FILENAME, mode="w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=FIELDS)
-            writer.writeheader()
-            for p in players:
-                writer.writerow(p.model_dump())
-        return updated
+    session.add(db_player)
+    session.commit()
+    session.refresh(db_player)
+    return db_player
 
-def delete_player(player_id: int):
-    players = read_all_players()
-    deleted = None
-    with open(FILENAME, mode="w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDS)
-        writer.writeheader()
-        for p in players:
-            if p.id == player_id:
-                deleted = p
-                continue
-            writer.writerow(p.model_dump())
-    return deleted
+# Eliminar jugador
+def delete_player(player_id: int, session: Session) -> Optional[Player]:
+    player = session.get(Player, player_id)
+    if not player:
+        return None
 
+    session.delete(player)
+    session.commit()
+    return player
