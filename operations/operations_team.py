@@ -1,7 +1,7 @@
 # operations_team.py
 from sqlmodel import Session, select
 from typing import List, Optional
-from models_team import Team, UpdatedTeam
+from data.models_team import Team, UpdatedTeam
 
 # Obtener todos los equipos
 def get_all_teams(session: Session) -> List[Team]:

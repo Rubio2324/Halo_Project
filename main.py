@@ -3,11 +3,22 @@ from fastapi import FastAPI, HTTPException, Depends
 from starlette.responses import JSONResponse
 from sqlmodel import Session, select
 
-from models_team import Team, UpdatedTeam
-from models_player import Player, UpdatedPlayer
-from db import create_db_and_tables, get_session
+from data.models_team import Team, UpdatedTeam
+from data.models_player import Player, UpdatedPlayer
+from utils.db import create_db_and_tables, get_session
 
-app = FastAPI()
+app = FastAPI(
+    title="API de Halo eSports",
+    description="""
+Esta API permite la gestión de **jugadores** y **equipos** del universo de Halo en el contexto de eSports.
+
+Puedes:
+
+- Crear, actualizar, eliminar y buscar jugadores.
+- Registrar y administrar equipos.
+""",
+    version="1.0.0"
+)
 
 
 @app.on_event("startup")
@@ -23,6 +34,11 @@ async def root():
 
 @app.post("/player", response_model=Player)
 def create_player(player: Player, session: Session = Depends(get_session)):
+    # Validar que el team_id exista si se proporciona
+    if player.team_id is not None:
+        team = session.get(Team, player.team_id)
+        if not team:
+            raise HTTPException(status_code=400, detail=f"El team_id {player.team_id} no existe")
     session.add(player)
     session.commit()
     session.refresh(player)
@@ -62,11 +78,11 @@ def delete_player(player_id: int, session: Session = Depends(get_session)):
     session.commit()
     return player
 
-@app.get("/player/filter/{team}", response_model=List[Player])
-def filter_players_by_team(team: str, session: Session = Depends(get_session)):
-    players = session.exec(select(Player).where(Player.team.ilike(team))).all()
+@app.get("/player/filter/{team_id}", response_model=List[Player])
+def filter_players_by_team(team_id: int, session: Session = Depends(get_session)):
+    players = session.exec(select(Player).where(Player.team_id == team_id)).all()
     if not players:
-        raise HTTPException(status_code=404, detail=f"No hay jugadores en el equipo '{team}'")
+        raise HTTPException(status_code=404, detail=f"No hay jugadores en el equipo con ID {team_id}")
     return players
 
 @app.get("/player/search/{gamertag}", response_model=Player)

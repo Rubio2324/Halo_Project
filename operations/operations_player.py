@@ -1,10 +1,9 @@
 # operations_player.py
 from sqlmodel import Session, select
 from typing import List, Optional
-from models_player import Player, UpdatedPlayer,PlayerCreate
-from db import get_session
+from data.models_player import Player, UpdatedPlayer
+from utils.db import get_session
 from fastapi import HTTPException
-from models_team import Team
 from operations_team import get_all_teams
 
 
@@ -17,7 +16,7 @@ def read_player_by_id(player_id: int, session: Session) -> Optional[Player]:
     return session.get(Player, player_id)
 
 # Crear nuevo jugador
-def create_player(player: PlayerCreate):
+def create_player(player: Player):
     # Obtener todos los equipos disponibles
     teams = get_all_teams()
 

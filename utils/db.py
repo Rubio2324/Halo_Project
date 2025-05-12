@@ -1,6 +1,4 @@
-# db.py
 from sqlmodel import SQLModel, create_engine, Session
-from sqlalchemy.engine import URL
 from dotenv import load_dotenv
 import os
 
@@ -21,3 +19,4 @@ def get_session():
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
