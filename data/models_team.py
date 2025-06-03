@@ -1,5 +1,9 @@
+# models_team.py
 from sqlmodel import SQLModel, Field
 from typing import Optional
+from pydantic import validator
+
+MAX_BIGINT = 9223372036854775807
 
 class Team(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -7,7 +11,30 @@ class Team(SQLModel, table=True):
     region: str
     championships: int
 
+class TeamCreate(SQLModel):
+    name: str
+    region: str
+    championships: int
+
+    @validator('championships')
+    def check_bigint_range(cls, v):
+        if v < 0:
+            raise ValueError("No se permiten valores negativos.")
+        if v > MAX_BIGINT:
+            raise ValueError(f"El valor no puede ser mayor a {MAX_BIGINT}.")
+        return v
+
 class UpdatedTeam(SQLModel):
     name: Optional[str] = None
     region: Optional[str] = None
     championships: Optional[int] = None
+
+    @validator('championships')
+    def check_bigint_range(cls, v):
+        if v is None:
+            return v
+        if v < 0:
+            raise ValueError("No se permiten valores negativos.")
+        if v > MAX_BIGINT:
+            raise ValueError(f"El valor no puede ser mayor a {MAX_BIGINT}.")
+        return v
