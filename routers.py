@@ -56,17 +56,17 @@ def delete_player(player_id: int, session: Session = Depends(get_session)):
     return {"message": "Jugador eliminado exitosamente"}
 
 # Obtener todos los jugadores
-@router.get("/players/", response_model=List[Player])
+@router.get("/players/", response_model=List[Player], tags=["Players"])
 def get_all_players(session: Session = Depends(get_session)):
     return session.exec(select(Player)).all()
 
 # Filtrar jugadores por nombre
-@router.get("/players/by-name/", response_model=List[Player])
+@router.get("/players/by-name/", response_model=List[Player], tags=["Players"])
 def get_players_by_name(name: str, session: Session = Depends(get_session)):
     return session.exec(select(Player).where(Player.name.ilike(f"%{name}%"))).all()
 
 # Filtrar jugadores por equipo
-@router.get("/players/by-team/", response_model=List[Player])
+@router.get("/players/by-team/", response_model=List[Player], tags=["Players"])
 def get_players_by_team(team_id: int, session: Session = Depends(get_session)):
     return session.exec(select(Player).where(Player.team_id == team_id)).all()
 
@@ -114,16 +114,16 @@ def delete_team(team_id: int, session: Session = Depends(get_session)):
     return {"message": "Equipo eliminado exitosamente"}
 
 # Obtener todos los equipos
-@router.get("/teams/", response_model=List[Team])
+@router.get("/teams/", response_model=List[Team],tags=["Teams"] )
 def get_all_teams(session: Session = Depends(get_session)):
     return session.exec(select(Team)).all()
 
 # Filtrar equipos por nombre
-@router.get("/teams/by-name/", response_model=List[Team])
+@router.get("/teams/by-name/", response_model=List[Team], tags=["Teams"])
 def get_teams_by_name(name: str, session: Session = Depends(get_session)):
     return session.exec(select(Team).where(Team.name.ilike(f"%{name}%"))).all()
 
 # Filtrar equipos por cantidad de campeonatos
-@router.get("/teams/by-championships/", response_model=List[Team])
+@router.get("/teams/by-championships/", response_model=List[Team], tags=["Teams"])
 def get_teams_by_championships(championships: int, session: Session = Depends(get_session)):
     return session.exec(select(Team).where(Team.championships == championships)).all()
