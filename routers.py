@@ -55,20 +55,20 @@ def delete_player(player_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"message": "Jugador eliminado exitosamente"}
 
-# Filtro para players por name y team_name
+# Obtener todos los jugadores
 @router.get("/players/", response_model=List[Player])
-def get_players(
-    name: Optional[str] = Query(None, description="Filtro por nombre del jugador"),
-    team_name: Optional[str] = Query(None, description="Filtro por nombre del equipo"),
-    session: Session = Depends(get_session)
-):
-    query = select(Player)
-    if name:
-        query = query.where(Player.name.ilike(f"%{name}%"))
-    if team_name:
-        query = query.join(Team, Player.team_id == Team.id).where(Team.name.ilike(f"%{team_name}%"))
-    players = session.exec(query).all()
-    return players
+def get_all_players(session: Session = Depends(get_session)):
+    return session.exec(select(Player)).all()
+
+# Filtrar jugadores por nombre
+@router.get("/players/by-name/", response_model=List[Player])
+def get_players_by_name(name: str, session: Session = Depends(get_session)):
+    return session.exec(select(Player).where(Player.name.ilike(f"%{name}%"))).all()
+
+# Filtrar jugadores por equipo
+@router.get("/players/by-team/", response_model=List[Player])
+def get_players_by_team(team_id: int, session: Session = Depends(get_session)):
+    return session.exec(select(Player).where(Player.team_id == team_id)).all()
 
 # ---------------------- TEAMS ----------------------
 
@@ -113,17 +113,17 @@ def delete_team(team_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"message": "Equipo eliminado exitosamente"}
 
-# Filtro para teams por name y championships
+# Obtener todos los equipos
 @router.get("/teams/", response_model=List[Team])
-def get_teams(
-    name: Optional[str] = Query(None, description="Filtro por nombre del equipo"),
-    championships: Optional[int] = Query(None, description="Filtro por cantidad de championships"),
-    session: Session = Depends(get_session)
-):
-    query = select(Team)
-    if name:
-        query = query.where(Team.name.ilike(f"%{name}%"))
-    if championships is not None:
-        query = query.where(Team.championships == championships)
-    teams = session.exec(query).all()
-    return teams
+def get_all_teams(session: Session = Depends(get_session)):
+    return session.exec(select(Team)).all()
+
+# Filtrar equipos por nombre
+@router.get("/teams/by-name/", response_model=List[Team])
+def get_teams_by_name(name: str, session: Session = Depends(get_session)):
+    return session.exec(select(Team).where(Team.name.ilike(f"%{name}%"))).all()
+
+# Filtrar equipos por cantidad de campeonatos
+@router.get("/teams/by-championships/", response_model=List[Team])
+def get_teams_by_championships(championships: int, session: Session = Depends(get_session)):
+    return session.exec(select(Team).where(Team.championships == championships)).all()
