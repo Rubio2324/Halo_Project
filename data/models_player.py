@@ -1,4 +1,3 @@
-# models_player.py
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from pydantic import validator
@@ -12,6 +11,7 @@ class Player(SQLModel, table=True):
     kills: int
     deaths: int
     team_id: Optional[int] = Field(default=None, foreign_key="team.id")
+    image_url: Optional[str] = None  # Nueva columna
 
 class PlayerCreate(SQLModel):
     name: str
@@ -19,6 +19,7 @@ class PlayerCreate(SQLModel):
     kills: int
     deaths: int
     team_id: Optional[int] = None
+    image_url: Optional[str] = None
 
     @validator('kills', 'deaths')
     def check_bigint_range(cls, v):
@@ -34,6 +35,7 @@ class UpdatedPlayer(SQLModel):
     kills: Optional[int] = None
     deaths: Optional[int] = None
     team_id: Optional[int] = None
+    image_url: Optional[str] = None
 
     @validator('kills', 'deaths')
     def check_bigint_range(cls, v):

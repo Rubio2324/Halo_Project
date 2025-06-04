@@ -1,4 +1,3 @@
-# models_team.py
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from pydantic import validator
@@ -10,11 +9,13 @@ class Team(SQLModel, table=True):
     name: str
     region: str
     championships: int
+    image_url: Optional[str] = None  # Nueva columna
 
 class TeamCreate(SQLModel):
     name: str
     region: str
     championships: int
+    image_url: Optional[str] = None
 
     @validator('championships')
     def check_bigint_range(cls, v):
@@ -28,6 +29,7 @@ class UpdatedTeam(SQLModel):
     name: Optional[str] = None
     region: Optional[str] = None
     championships: Optional[int] = None
+    image_url: Optional[str] = None
 
     @validator('championships')
     def check_bigint_range(cls, v):
