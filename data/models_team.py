@@ -1,16 +1,20 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from pydantic import validator
+from sqlalchemy import Column, BIGINT
 
 MAX_BIGINT = 9223372036854775807
 
+# --- MODELO PRINCIPAL (TABLA) ---
 class Team(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, sa_column=Column(BIGINT, primary_key=True))
     name: str
     region: str
-    championships: int
-    image_url: Optional[str] = None  # Nueva columna
+    championships: int = Field(sa_column=Column(BIGINT))
+    image_url: Optional[str] = None
 
+
+# --- CREAR TEAM ---
 class TeamCreate(SQLModel):
     name: str
     region: str
@@ -25,6 +29,8 @@ class TeamCreate(SQLModel):
             raise ValueError(f"El valor no puede ser mayor a {MAX_BIGINT}.")
         return v
 
+
+# --- ACTUALIZAR TEAM ---
 class UpdatedTeam(SQLModel):
     name: Optional[str] = None
     region: Optional[str] = None
@@ -41,9 +47,11 @@ class UpdatedTeam(SQLModel):
             raise ValueError(f"El valor no puede ser mayor a {MAX_BIGINT}.")
         return v
 
+
+# --- ELIMINADO (HISTORIAL) ---
 class DeletedTeam(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, sa_column=Column(BIGINT, primary_key=True))
     name: str
     region: str
-    championships: int
+    championships: int = Field(sa_column=Column(BIGINT))
     image_url: Optional[str] = None

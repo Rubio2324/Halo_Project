@@ -1,18 +1,21 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from pydantic import validator
+from sqlalchemy import Column, BIGINT, ForeignKey
 
 MAX_BIGINT = 9223372036854775807
 
+# --- MODELO PRINCIPAL (TABLA) ---
 class Player(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(sa_column=Column(BIGINT, primary_key=True, autoincrement=True))
     name: str
     gamertag: str
-    kills: int
-    deaths: int
-    team_id: Optional[int] = Field(default=None, foreign_key="team.id")
-    image_url: Optional[str] = None  # Nueva columna
+    kills: int = Field(sa_column=Column(BIGINT))
+    deaths: int = Field(sa_column=Column(BIGINT))
+    team_id: Optional[int] = Field(sa_column=Column(BIGINT, ForeignKey("team.id"), nullable=True))
+    image_url: Optional[str] = None
 
+# --- CREAR PLAYER ---
 class PlayerCreate(SQLModel):
     name: str
     gamertag: str
@@ -29,6 +32,7 @@ class PlayerCreate(SQLModel):
             raise ValueError(f"El valor no puede ser mayor a {MAX_BIGINT}.")
         return v
 
+# --- ACTUALIZAR PLAYER ---
 class UpdatedPlayer(SQLModel):
     name: Optional[str] = None
     gamertag: Optional[str] = None
@@ -47,11 +51,12 @@ class UpdatedPlayer(SQLModel):
             raise ValueError(f"El valor no puede ser mayor a {MAX_BIGINT}.")
         return v
 
+# --- ELIMINADO (HISTORIAL) ---
 class DeletedPlayer(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(sa_column=Column(BIGINT, primary_key=True, autoincrement=True))
     name: str
     gamertag: str
-    kills: int
-    deaths: int
-    team_id: Optional[int] = None
+    kills: int = Field(sa_column=Column(BIGINT))
+    deaths: int = Field(sa_column=Column(BIGINT))
+    team_id: Optional[int] = Field(sa_column=Column(BIGINT, ForeignKey("team.id"), nullable=True))
     image_url: Optional[str] = None
