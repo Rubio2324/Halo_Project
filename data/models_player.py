@@ -46,3 +46,12 @@ class UpdatedPlayer(SQLModel):
         if v > MAX_BIGINT:
             raise ValueError(f"El valor no puede ser mayor a {MAX_BIGINT}.")
         return v
+
+class DeletedPlayer(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    gamertag: str
+    kills: int
+    deaths: int
+    team_id: Optional[int] = None
+    image_url: Optional[str] = None

@@ -1,7 +1,9 @@
 # operations_team.py
 from sqlmodel import Session, select
 from typing import List, Optional
-from data.models_team import Team, UpdatedTeam
+from fastapi import HTTPException
+from data.models_team import Team, UpdatedTeam, DeletedTeam
+from data.models_player import DeletedPlayer, Player
 
 # Obtener todos los equipos
 def get_all_teams(session: Session) -> List[Team]:
@@ -50,3 +52,51 @@ def search_team_by_name(name: str, session: Session) -> Optional[Team]:
 # Filtrar por región
 def filter_teams_by_region(region: str, session: Session) -> List[Team]:
     return session.exec(select(Team).where(Team.region.ilike(region))).all()
+
+#Teams eliminados y mandarlos al histrial
+def delete_team(team_id: int, session: Session):
+    team = session.get(Team, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+
+    # Guardar el team en DeletedTeam
+    deleted_team = DeletedTeam(**team.dict())
+    session.add(deleted_team)
+
+    # Buscar jugadores del equipo
+    players = session.exec(select(Player).where(Player.team_id == team_id)).all()
+
+    for player in players:
+        deleted_player = DeletedPlayer(**player.dict())
+        session.add(deleted_player)
+        session.delete(player)
+
+    session.delete(team)
+    session.commit()
+    return {"message": f"Equipo '{team.name}' y sus jugadores han sido eliminados con historial."}
+
+
+#Mostrar Historial
+def get_deleted_teams(session: Session) -> List[DeletedTeam]:
+    teams = session.exec(select(DeletedTeam)).all()
+    return teams
+
+#Restaurar Teams y Jugadores de ese Team
+def restore_team(team_id: int, session: Session):
+    deleted_team = session.get(DeletedTeam, team_id)
+    if not deleted_team:
+        raise HTTPException(status_code=404, detail="Equipo eliminado no encontrado")
+
+    restored_team = Team(**deleted_team.dict())
+    session.add(restored_team)
+
+    # Restaurar los jugadores con ese team_id
+    deleted_players = session.exec(select(DeletedPlayer).where(DeletedPlayer.team_id == team_id)).all()
+    for deleted_player in deleted_players:
+        restored_player = Player(**deleted_player.dict())
+        session.add(restored_player)
+        session.delete(deleted_player)
+
+    session.delete(deleted_team)
+    session.commit()
+    return {"message": f"Equipo '{restored_team.name}' y sus jugadores han sido restaurados."}
