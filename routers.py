@@ -18,12 +18,18 @@ def create_player(player: PlayerCreate, session: Session = Depends(get_session))
         team = session.get(Team, player.team_id)
         if not team:
             raise HTTPException(status_code=400, detail=f"El team_id {player.team_id} no existe")
-    db_player = Player.from_orm(player)
+    db_player = Player(
+        name=player.name,
+        gamertag=player.gamertag,
+        kills=player.kills,
+        deaths=player.deaths,
+        team_id=player.team_id,
+        image_url=player.image_url,
+    )
     session.add(db_player)
     session.commit()
     session.refresh(db_player)
     return db_player
-
 @router.get("/players/", response_model=List[Player], tags=["Players"])
 def get_all_players(session: Session = Depends(get_session)):
     return session.exec(select(Player)).all()
