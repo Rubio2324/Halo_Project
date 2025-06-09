@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from typing import List, Optional
+from info_routers import router as info_router
 
 from utils.db import get_session
 from data.models_player import Player, PlayerCreate, UpdatedPlayer, DeletedPlayer
@@ -9,6 +10,7 @@ from data.models_team import DeletedTeam
 from operations.operations_team import get_deleted_teams,restore_team, delete_team
 
 router = APIRouter()
+router.include_router(info_router)
 
 # ---------------------- PLAYERS ----------------------
 
