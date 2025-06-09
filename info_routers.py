@@ -40,7 +40,7 @@ def planning_info():
             "Visualizar estadísticas clave de jugadores y equipos."
         ],
         "fuente_datos_reales": [
-            "https://liquipedia.net/halo/Halo_Championship_Series/2024/Charlotte",
+            "https://liquipedia.net/halo/Halo_Championship_Series/2025/Split_1/Arlington_Major?utm_source",
             "https://www.halodatahive.com/",
             "https://twitter.com/HCS"
         ],
