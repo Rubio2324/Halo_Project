@@ -30,12 +30,17 @@ def create_player(player: PlayerCreate, session: Session = Depends(get_session))
     session.commit()
     session.refresh(db_player)
     return db_player
-@router.get("/players/", response_model=List[Player], tags=["Players"])
+
+# Obtener todos los jugadores
+@router.get("/players", tags=["Players"])
 def get_all_players(session: Session = Depends(get_session)):
-    return session.exec(select(Player)).all()
+    players = session.exec(select(Player)).all()
+    if not players:
+        raise HTTPException(status_code=404, detail="No hay jugadores registrados.")
+    return players
 
 @router.get("/players/{player_id}", response_model=Player, tags=["Players"])
-def get_player(player_id: int, session: Session = Depends(get_session)):
+def get_player_by_id(player_id: int, session: Session = Depends(get_session)):
     player = session.get(Player, player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
@@ -46,13 +51,23 @@ def update_player(player_id: int, update_data: UpdatedPlayer, session: Session =
     player = session.get(Player, player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
     update_dict = update_data.dict(exclude_unset=True)
+
+    # Validar que el team_id existe si viene en los datos
+    if "team_id" in update_dict and update_dict["team_id"] is not None:
+        team = session.get(Team, update_dict["team_id"])
+        if not team:
+            raise HTTPException(status_code=400, detail=f"El team_id {update_dict['team_id']} no existe")
+
     for key, value in update_dict.items():
         setattr(player, key, value)
+
     session.add(player)
     session.commit()
     session.refresh(player)
     return player
+
 
 #Eliminar Jugador y Pasarlo al Historial
 @router.delete("/players/{player_id}", response_model=dict, tags=["Players"])
@@ -76,16 +91,28 @@ def delete_player(player_id: int, session: Session = Depends(get_session)):
     return {"message": "Jugador eliminado y movido al historial"}
 
 #Mostrar Historial
-@router.get("/deleted-players/", response_model=List[DeletedPlayer], tags=["Players"])
+@router.get("/deleted-players", tags=["Players"])
 def get_deleted_players(session: Session = Depends(get_session)):
-    return session.exec(select(DeletedPlayer)).all()
+    deleted_players = session.exec(select(DeletedPlayer)).all()
+    if not deleted_players:
+        raise HTTPException(status_code=404, detail="No hay jugadores eliminados.")
+    return deleted_players
 
 #Restaurar Jugador eliminado
-@router.post("/restore-player/{player_id}", response_model=Player, tags=["Players"])
-def restore_deleted_player(player_id: int, session: Session = Depends(get_session)):
+@router.post("/players/restore/{player_id}", response_model=Player, tags=["Players"])
+def restore_player(player_id: int, session: Session = Depends(get_session)):
     deleted_player = session.get(DeletedPlayer, player_id)
     if not deleted_player:
         raise HTTPException(status_code=404, detail="Jugador eliminado no encontrado")
+
+    # Validar si el team_id sigue existiendo (modo estricto)
+    if deleted_player.team_id is not None:
+        team = session.get(Team, deleted_player.team_id)
+        if not team:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se puede restaurar el jugador porque el equipo con ID {deleted_player.team_id} no existe"
+            )
 
     restored_player = Player(
         id=deleted_player.id,
@@ -96,26 +123,29 @@ def restore_deleted_player(player_id: int, session: Session = Depends(get_sessio
         team_id=deleted_player.team_id,
         image_url=deleted_player.image_url
     )
+
     session.add(restored_player)
     session.delete(deleted_player)
     session.commit()
+    session.refresh(restored_player)
     return restored_player
 
 
-# Obtener todos los jugadores
-@router.get("/players/", response_model=List[Player], tags=["Players"])
-def get_all_players(session: Session = Depends(get_session)):
-    return session.exec(select(Player)).all()
-
 # Filtrar jugadores por nombre
-@router.get("/players/by-name/", response_model=List[Player], tags=["Players"])
-def get_players_by_name(name: str, session: Session = Depends(get_session)):
-    return session.exec(select(Player).where(Player.name.ilike(f"%{name}%"))).all()
+@router.get("/players/by-name/{name}", tags=["Players"])
+def get_player_by_name(name: str, session: Session = Depends(get_session)):
+    players = session.exec(select(Player).where(Player.name.ilike(f"%{name}%"))).all()
+    if not players:
+        raise HTTPException(status_code=404, detail=f"No se encontraron jugadores con el nombre '{name}'.")
+    return players
 
 # Filtrar jugadores por equipo
-@router.get("/players/by-team/", response_model=List[Player], tags=["Players"])
+@router.get("/players/by-team/{team_id}", tags=["Players"])
 def get_players_by_team(team_id: int, session: Session = Depends(get_session)):
-    return session.exec(select(Player).where(Player.team_id == team_id)).all()
+    players = session.exec(select(Player).where(Player.team_id == team_id)).all()
+    if not players:
+        raise HTTPException(status_code=404, detail=f"No se encontraron jugadores para el equipo con ID {team_id}.")
+    return players
 
 # ---------------------- TEAMS ----------------------
 
@@ -127,9 +157,13 @@ def create_team(team: TeamCreate, session: Session = Depends(get_session)):
     session.refresh(db_team)
     return db_team
 
-@router.get("/teams/", response_model=List[Team], tags=["Teams"])
+# Obtener todos los equipos
+@router.get("/teams", tags=["Teams"])
 def get_all_teams(session: Session = Depends(get_session)):
-    return session.exec(select(Team)).all()
+    teams = session.exec(select(Team)).all()
+    if not teams:
+        raise HTTPException(status_code=404, detail="No hay equipos registrados.")
+    return teams
 
 @router.get("/teams/{team_id}", response_model=Team, tags=["Teams"])
 def get_team(team_id: int, session: Session = Depends(get_session)):
@@ -151,33 +185,36 @@ def update_team(team_id: int, update_data: UpdatedTeam, session: Session = Depen
     session.refresh(team)
     return team
 
-# Obtener todos los equipos
-@router.get("/teams/", response_model=List[Team],tags=["Teams"] )
-def get_all_teams(session: Session = Depends(get_session)):
-    return session.exec(select(Team)).all()
-
-# Filtrar equipos por nombre
-@router.get("/teams/by-name/", response_model=List[Team], tags=["Teams"])
-def get_teams_by_name(name: str, session: Session = Depends(get_session)):
-    return session.exec(select(Team).where(Team.name.ilike(f"%{name}%"))).all()
-
-# Filtrar equipos por cantidad de campeonatos
-@router.get("/teams/by-championships/", response_model=List[Team], tags=["Teams"])
-def get_teams_by_championships(championships: int, session: Session = Depends(get_session)):
-    return session.exec(select(Team).where(Team.championships == championships)).all()
-
 #Eliminar Teams y mandarlos al historial
 @router.delete("/teams/{team_id}", tags=["Teams"])
 def delete_teams (team_id: int, session: Session = Depends(get_session)):
     return delete_team(team_id, session)
 
 #Mostrar Teams Eliminados
-@router.get("/deleted-teams", response_model=list[DeletedTeam], tags=["Teams"])
+@router.get("/deleted-teams", tags=["Teams"])
 def get_deleted_teams(session: Session = Depends(get_session)):
-    teams = session.exec(select(DeletedTeam)).all()
-    return teams
+    deleted_teams = session.exec(select(DeletedTeam)).all()
+    if not deleted_teams:
+        raise HTTPException(status_code=404, detail="No hay equipos eliminados.")
+    return deleted_teams
 
 #Restaurar Teams
 @router.post("/teams/restore/{team_id}", tags=["Teams"])
 def restore_team_endpoint (team_id: int, session: Session = Depends(get_session)):
     return restore_team(team_id, session)
+
+# Filtrar equipos por nombre
+@router.get("/teams/by-name/{name}", tags=["Teams"])
+def get_teams_by_name(name: str, session: Session = Depends(get_session)):
+    teams = session.exec(select(Team).where(Team.name.ilike(f"%{name}%"))).all()
+    if not teams:
+        raise HTTPException(status_code=404, detail=f"No se encontraron equipos con el nombre '{name}'.")
+    return teams
+
+# Filtrar equipos por cantidad de campeonatos
+@router.get("/teams/by-championship/{championship}", tags=["Teams"])
+def get_teams_by_championship(championship: int, session: Session = Depends(get_session)):
+    teams = session.exec(select(Team).where(Team.championships == championship)).all()
+    if not teams:
+        raise HTTPException(status_code=404, detail=f"No se encontraron equipos con {championship} campeonatos ganados.")
+    return teams

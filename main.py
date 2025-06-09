@@ -31,13 +31,20 @@ async def root():
 
 @app.delete("/reset-all", tags=["General"])
 def reset_all(session: Session = Depends(get_session)):
+    # Eliminar registros de todas las tablas (incluyendo historial)
     session.exec(text("DELETE FROM player"))
     session.exec(text("DELETE FROM team"))
+    session.exec(text("DELETE FROM deletedplayer"))
+    session.exec(text("DELETE FROM deletedteam"))
+
     # Reiniciar secuencias para IDs (PostgreSQL)
     session.execute(text("SELECT setval(pg_get_serial_sequence('player', 'id'), 1, false)"))
     session.execute(text("SELECT setval(pg_get_serial_sequence('team', 'id'), 1, false)"))
+    session.execute(text("SELECT setval(pg_get_serial_sequence('deletedplayer', 'id'), 1, false)"))
+    session.execute(text("SELECT setval(pg_get_serial_sequence('deletedteam', 'id'), 1, false)"))
+
     session.commit()
-    return {"message": "Todos los jugadores y equipos eliminados, secuencias reiniciadas"}
+    return {"message": "Todos los jugadores, equipos y registros históricos eliminados. Secuencias reiniciadas."}
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
