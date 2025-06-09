@@ -20,7 +20,16 @@ def developer_info():
 def project_objective():
     return {
         "objetivo": "Desarrollar un sistema de gestión para jugadores y equipos de Halo eSports, incluyendo control de historial, imágenes, filtros, validaciones y estadísticas, con una arquitectura limpia y desplegado en la web con conexión a una base de datos en línea."
+                    "resuelve:" "Permite administrar información detallada de competencias de Halo con estadísticas reales, visualización ordenada y control de cambios. Útil para ligas, torneos y fanáticos."
+    "tecnologias:"
+        "Python + FastAPI"
+        "SQLModel + PostgreSQL"
+        "Render (deploy backend y base de datos)"
+        "GitHub (control de versiones)"
+        "Supabase (almacenamiento de imágenes)"
+        "pytest (testing backend)"
     }
+
 
 @router.get("/planning-info", tags=["Documentación"])
 def planning_info():
