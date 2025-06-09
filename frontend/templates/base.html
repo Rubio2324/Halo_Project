@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Halo eSports{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Halo eSports Manager</h1>
+        <nav>
+            <a href="/players/view">Jugadores</a> |
+            <a href="/teams/view">Equipos</a> |
+            <a href="/players/deleted">Historial Jugadores</a> |
+            <a href="/teams/deleted">Historial Equipos</a> |
+            <a href="/players/new">Crear Jugador</a> |
+            <a href="/teams/new">Crear Equipo</a>
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2025 Proyecto Halo eSports</p>
+    </footer>
+</body>
+</html>

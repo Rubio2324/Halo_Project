@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Jugadores{% endblock %}
+
+{% block content %}
+<h2>Lista de Jugadores</h2>
+
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Gamertag</th>
+        <th>Kills</th>
+        <th>Deaths</th>
+        <th>Equipo</th>
+        <th>Imagen</th>
+    </tr>
+    {% for player in players %}
+    <tr>
+        <td>{{ player.name }}</td>
+        <td>{{ player.gamertag }}</td>
+        <td>{{ player.kills }}</td>
+        <td>{{ player.deaths }}</td>
+        <td>{{ player.team_id }}</td>
+        <td>
+            {% if player.image_url %}
+                <img src="{{ player.image_url }}" alt="Imagen" width="80">
+            {% else %}
+                Sin imagen
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

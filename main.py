@@ -2,9 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlmodel import Session
+from fastapi.templating import Jinja2Templates
 
 from utils.db import create_db_and_tables, get_session
 from routers import router  # Importa el router con endpoints de players y teams
+from fastapi.staticfiles import StaticFiles
+from frontend_routers import router as frontend_router
 
 app = FastAPI(
     title="API de Halo eSports",
@@ -19,6 +22,8 @@ Puedes:
     version="1.0.0"
 )
 
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+app.include_router(frontend_router)
 app.include_router(router)  # Incluye los endpoints de players y teams
 
 @app.on_event("startup")

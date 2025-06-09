@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Equipos{% endblock %}
+
+{% block content %}
+<h2>Lista de Equipos</h2>
+
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Región</th>
+        <th>Campeonatos</th>
+        <th>Imagen</th>
+    </tr>
+    {% for team in teams %}
+    <tr>
+        <td>{{ team.name }}</td>
+        <td>{{ team.region }}</td>
+        <td>{{ team.championships }}</td>
+        <td>
+            {% if team.image_url %}
+                <img src="{{ team.image_url }}" alt="Logo del equipo" width="80">
+            {% else %}
+                Sin imagen
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
