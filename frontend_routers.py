@@ -6,8 +6,6 @@ import shutil
 import os
 from pathlib import Path
 
-# IMPORTANTE: Ya no importamos templates ni BASE_DIR de main.py
-# Cada router/módulo que necesite Jinja2Templates debe inicializarlo por sí mismo
 from fastapi.templating import Jinja2Templates
 
 from utils.db import get_session
@@ -18,13 +16,12 @@ from urllib.parse import urlencode
 def validar_extension_jpg(archivo: UploadFile):
     ext = os.path.splitext(archivo.filename)[1].lower()
     if ext != ".jpg":
+        # Se lanza una HTTPException si la extensión no es .jpg
         raise HTTPException(status_code=400, detail="Solo se permiten archivos con extensión .jpg")
 
 # Definir la ruta base para este módulo.
 # Asumiendo que frontend_routers.py está en la raíz de 'src' (project_root_dir)
 # y que 'static' y 'frontend/templates' están directamente bajo 'src'.
-# Si tu frontend_routers.py estuviera en 'src/frontend/', entonces Path(__file__).resolve().parent.parent
-# Si main.py y frontend_routers.py están ambos en la misma carpeta 'src':
 project_root_dir = Path(__file__).resolve().parent
 
 # Inicializar templates para este router. La carpeta de plantillas es 'frontend/templates' relativa a project_root_dir
@@ -83,36 +80,58 @@ async def create_player_form(
     team_id: Optional[int] = Form(None),
     image: UploadFile = File(...)
 ):
-    validar_extension_jpg(image)
+    try: # Inicia el bloque try
+        validar_extension_jpg(image)
 
-    static_dir = project_root_dir / "static"
-    os.makedirs(static_dir, exist_ok=True)  # Crea la carpeta si no existe
+        static_dir = project_root_dir / "static"
+        os.makedirs(static_dir, exist_ok=True)  # Crea la carpeta si no existe
 
-    # CORRECCIÓN: Usar Path para construir la ruta absoluta del archivo a guardar
-    image_path = static_dir / image.filename
-    with open(image_path, "wb") as buffer:
-        buffer.write(await image.read())
+        image_path = static_dir / image.filename
+        # Asegúrate de que el nombre del archivo no cause problemas (ej. caracteres especiales, duplicados)
+        # Podrías generar un nombre único si es necesario, pero por ahora usamos el original
+        with open(image_path, "wb") as buffer:
+            buffer.write(await image.read())
 
-    image_url = f"/static/{image.filename}" # La URL para el navegador sigue siendo relativa al punto de montaje de /static
+        image_url = f"/static/{image.filename}" # La URL para el navegador
 
-    if team_id:
-        team = session.get(Team, team_id)
-        if not team:
-            raise HTTPException(status_code=400, detail=f"El team_id {team_id} no existe")
+        team = None
+        if team_id is not None: # Solo intenta buscar el equipo si se proporcionó un team_id
+            team = session.get(Team, team_id)
+            if not team:
+                raise HTTPException(status_code=400, detail=f"El team_id {team_id} no existe")
 
-    db_player = Player(
-        name=name,
-        gamertag=gamertag,
-        kills=kills,
-        deaths=deaths,
-        team_id=team_id,
-        image_url=image_url
-    )
+        db_player = Player(
+            name=name,
+            gamertag=gamertag,
+            kills=kills,
+            deaths=deaths,
+            team_id=team_id, # Esto puede ser None si no se seleccionó un equipo
+            image_url=image_url
+        )
 
-    session.add(db_player)
-    session.commit()
-    session.refresh(db_player)
-    return RedirectResponse("/frontend/players/view", status_code=303)
+        session.add(db_player)
+        session.commit()
+        session.refresh(db_player)
+
+        # Log para depuración
+        print(f"DEBUG: Jugador '{db_player.name}' (ID: {db_player.id}) creado exitosamente. Redirigiendo...")
+
+        return RedirectResponse("/frontend/players/view", status_code=303)
+
+    except HTTPException as e:
+        # Esto captura las excepciones lanzadas por validar_extension_jpg o por la no existencia del team_id
+        session.rollback() # Asegúrate de hacer rollback si algo falla antes del commit final
+        print(f"ERROR: HTTPException al crear jugador: {e.detail}")
+        raise e # Re-lanza la excepción para que FastAPI la maneje y muestre al usuario
+
+    except Exception as e:
+        # Esto capturará cualquier otro error inesperado (ej. problemas de DB, escritura de archivo)
+        session.rollback() # Importante: si hay un error, haz rollback
+        print(f"ERROR: Error inesperado al crear jugador: {e}")
+        # Puedes redirigir a una página de error o mostrar un mensaje genérico
+        # Para depuración, es mejor lanzar una HTTPException 500
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor al crear jugador: {e}")
+
 
 @router.post("/players/delete/{player_id}", tags=["Frontend Player"])
 def delete_player_frontend(player_id: int, session: Session = Depends(get_session)):
@@ -192,35 +211,48 @@ async def update_player_form(
     image: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session)
 ):
-    player = session.get(Player, player_id)
-    if not player:
-        raise HTTPException(status_code=404, detail="Jugador no encontrado.")
+    try: # Inicia el bloque try
+        player = session.get(Player, player_id)
+        if not player:
+            raise HTTPException(status_code=404, detail="Jugador no encontrado.")
 
-    if team_id:
-        team = session.get(Team, team_id)
-        if not team:
-            raise HTTPException(status_code=400, detail="Equipo no válido.")
+        if team_id:
+            team = session.get(Team, team_id)
+            if not team:
+                raise HTTPException(status_code=400, detail="Equipo no válido.")
 
-    player.name = name
-    player.gamertag = gamertag
-    player.kills = kills
-    player.deaths = deaths
-    player.team_id = team_id
+        player.name = name
+        player.gamertag = gamertag
+        player.kills = kills
+        player.deaths = deaths
+        player.team_id = team_id
 
-    if image:
-        validar_extension_jpg(image)
-        static_dir = project_root_dir / "static"
-        os.makedirs(static_dir, exist_ok=True)
-        image_path = static_dir / image.filename
-        with open(image_path, "wb") as buffer:
-            buffer.write(await image.read())
-        player.image_url = f"/static/{image.filename}"
+        if image:
+            validar_extension_jpg(image)
+            static_dir = project_root_dir / "static"
+            os.makedirs(static_dir, exist_ok=True)
+            image_path = static_dir / image.filename
+            with open(image_path, "wb") as buffer:
+                buffer.write(await image.read())
+            player.image_url = f"/static/{image.filename}"
 
-    session.add(player)
-    session.commit()
-    session.refresh(player)
+        session.add(player)
+        session.commit()
+        session.refresh(player)
 
-    return RedirectResponse(url="/frontend/players/view", status_code=303)
+        print(f"DEBUG: Jugador '{player.name}' (ID: {player.id}) actualizado exitosamente.")
+
+        return RedirectResponse(url="/frontend/players/view", status_code=303)
+
+    except HTTPException as e:
+        session.rollback()
+        print(f"ERROR: HTTPException al actualizar jugador: {e.detail}")
+        raise e
+    except Exception as e:
+        session.rollback()
+        print(f"ERROR: Error inesperado al actualizar jugador: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {e}")
+
 
 #----------------------------- TEAMS ----------------------------------------------------------------------------
 @router.get("/teams/view", response_class=HTMLResponse , tags=["Frontend Teams"])
@@ -260,30 +292,42 @@ async def create_team_form(
     image: UploadFile = File(...),
     session: Session = Depends(get_session)
 ):
-    validar_extension_jpg(image)
+    try: # Inicia el bloque try
+        validar_extension_jpg(image)
 
-    static_dir = project_root_dir / "static"
-    os.makedirs(static_dir, exist_ok=True)
+        static_dir = project_root_dir / "static"
+        os.makedirs(static_dir, exist_ok=True)
 
-    # CORRECCIÓN: Usar Path para construir la ruta absoluta del archivo a guardar
-    image_path = static_dir / image.filename
-    with open(image_path, "wb") as buffer:
-        buffer.write(await image.read())
+        image_path = static_dir / image.filename
+        with open(image_path, "wb") as buffer:
+            buffer.write(await image.read())
 
-    image_url = f"/static/{image.filename}"
+        image_url = f"/static/{image.filename}"
 
-    db_team = Team(
-        name=name,
-        region=region,
-        championships=championships,
-        image_url=image_url
-    )
+        db_team = Team(
+            name=name,
+            region=region,
+            championships=championships,
+            image_url=image_url
+        )
 
-    session.add(db_team)
-    session.commit()
-    session.refresh(db_team)
+        session.add(db_team)
+        session.commit()
+        session.refresh(db_team)
 
-    return RedirectResponse(url="/frontend/teams/view", status_code=303)
+        print(f"DEBUG: Equipo '{db_team.name}' (ID: {db_team.id}) creado exitosamente. Redirigiendo...")
+
+        return RedirectResponse(url="/frontend/teams/view", status_code=303)
+
+    except HTTPException as e:
+        session.rollback()
+        print(f"ERROR: HTTPException al crear equipo: {e.detail}")
+        raise e
+    except Exception as e:
+        session.rollback()
+        print(f"ERROR: Error inesperado al crear equipo: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {e}")
+
 
 # ÚNICA FUNCIÓN delete_team_frontend - la duplicada ha sido eliminada.
 @router.post("/teams/delete/{team_id}", tags=["Frontend Teams"])
@@ -294,7 +338,6 @@ def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
 
     players = session.exec(select(Player).where(Player.team_id == team_id)).all()
     if players:
-        # Redirige con mensaje de error si hay jugadores asignados
         message = urlencode({"error": "No se puede eliminar el equipo porque tiene jugadores asignados."})
         return RedirectResponse(url=f"/frontend/teams/view?{message}", status_code=303)
 
@@ -311,6 +354,7 @@ def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
     session.commit()
 
     return RedirectResponse(url="/frontend/teams/view", status_code=303)
+
 
 @router.post("/teams/delete-permanent/{team_id}", tags=["Frontend Teams"])
 def delete_team_permanently(team_id: int, session: Session = Depends(get_session)):
@@ -341,26 +385,38 @@ async def update_team_form(
     image: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session)
 ):
-    team = session.get(Team, team_id)
-    if not team:
-        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    try: # Inicia el bloque try
+        team = session.get(Team, team_id)
+        if not team:
+            raise HTTPException(status_code=404, detail="Equipo no encontrado")
 
-    team.name = name
-    team.region = region
-    team.championships = championships
+        team.name = name
+        team.region = region
+        team.championships = championships
 
-    if image:
-        validar_extension_jpg(image)
-        static_dir = project_root_dir / "static"
-        os.makedirs(static_dir, exist_ok=True)
-        image_path = static_dir / image.filename
-        with open(image_path, "wb") as buffer:
-            buffer.write(await image.read())
-        team.image_url = f"/static/{image.filename}"
+        if image:
+            validar_extension_jpg(image)
+            static_dir = project_root_dir / "static"
+            os.makedirs(static_dir, exist_ok=True)
+            image_path = static_dir / image.filename
+            with open(image_path, "wb") as buffer:
+                buffer.write(await image.read())
+            team.image_url = f"/static/{image.filename}"
 
-    session.add(team)
-    session.commit()
-    return RedirectResponse(url="/frontend/teams/view", status_code=303)
+        session.add(team)
+        session.commit()
+        print(f"DEBUG: Equipo '{team.name}' (ID: {team.id}) actualizado exitosamente.")
+        return RedirectResponse(url="/frontend/teams/view", status_code=303)
+
+    except HTTPException as e:
+        session.rollback()
+        print(f"ERROR: HTTPException al actualizar equipo: {e.detail}")
+        raise e
+    except Exception as e:
+        session.rollback()
+        print(f"ERROR: Error inesperado al actualizar equipo: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {e}")
+
 
 # ---------------- INFORMACIÓN Y DOCUMENTACIÓN ------------------------
 
