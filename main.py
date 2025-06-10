@@ -1,14 +1,19 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, HTMLResponse
 from sqlalchemy import text
 from sqlmodel import Session
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+import os
+from pathlib import Path
 
 from utils.db import create_db_and_tables, get_session
-from routers import router  # Importa el router con endpoints de players y teams
-from fastapi.staticfiles import StaticFiles
+from routers import router
 from frontend_routers import router as frontend_router
-import os
+
+
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=BASE_DIR / "frontend" / "templates")
 
 app = FastAPI(
     title="API de Halo eSports",
@@ -24,27 +29,25 @@ Puedes:
 )
 
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.include_router(frontend_router)
-app.include_router(router)  # Incluye los endpoints de players y teams
+app.include_router(router)
 
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
 
-@app.get("/", tags=["General"])
-async def root():
-    return {"message": "API de jugadores Halo eSports"}
+@app.get("/", response_class=HTMLResponse, tags=["General"])
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.delete("/reset-all", tags=["General"])
 def reset_all(session: Session = Depends(get_session)):
-    # Eliminar registros de todas las tablas (incluyendo historial)
     session.exec(text("DELETE FROM player"))
     session.exec(text("DELETE FROM team"))
     session.exec(text("DELETE FROM deletedplayer"))
     session.exec(text("DELETE FROM deletedteam"))
 
-    # Reiniciar secuencias para IDs (PostgreSQL)
     session.execute(text("SELECT setval(pg_get_serial_sequence('player', 'id'), 1, false)"))
     session.execute(text("SELECT setval(pg_get_serial_sequence('team', 'id'), 1, false)"))
     session.execute(text("SELECT setval(pg_get_serial_sequence('deletedplayer', 'id'), 1, false)"))
@@ -67,4 +70,3 @@ async def http_exception_handler(request, exc):
 @app.get("/error", tags=["General"])
 async def raise_exception():
     raise HTTPException(status_code=400, detail="Esto es un error simulado")
-
