@@ -45,7 +45,7 @@
 </head>
 <body>
     <header>
-        <h1><a href="{{ url_for('index') }}">Halo eSports Manager</a></h1>
+        <h1><a href="{{ url_for('index') }}">Halo eSports Manager</a></h1> {# <--- ¡CAMBIADO A 'index'! #}
         <nav>
             <ul>
                 <li><a href="{{ url_for('show_players') }}">Jugadores</a></li>
@@ -71,7 +71,6 @@
                         <a href="{{ url_for('project_objective') }}">Objetivo</a>
                         <a href="{{ url_for('planning_info') }}">Planificación</a>
                         <a href="{{ url_for('design_info') }}">Diseño</a>
-                        <a href="{{ url_for('show_statistics') }}">Estadísticas</a> {# <-- ¡Aquí está el nuevo enlace! #}
                     </div>
                 </li>
             </ul>
