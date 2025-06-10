@@ -6,21 +6,21 @@
     <title>{% block title %}Halo eSports Manager{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css"> {# Asegúrate de tener este CSS #}
     <style>
-        /* ESTILOS CSS BÁSICOS PARA LA NAVEGACIÓN (puedes mover esto a style.css) */
+        /* MUEVE ESTOS ESTILOS A static/style.css */
+        /*
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
         header { background-color: #2c3e50; color: white; padding: 10px 0; text-align: center; }
         header h1 { margin: 0; padding: 0; }
         header h1 a { color: white; text-decoration: none; }
         nav ul { list-style: none; padding: 0; margin: 0; display: flex; justify-content: center; background-color: #34495e; }
-        nav ul li { position: relative; } /* Para menús desplegables */
+        nav ul li { position: relative; }
         nav ul li a { display: block; padding: 15px 20px; color: white; text-decoration: none; }
-        nav ul li a:hover { background-color: #2ecc71; } /* Color al pasar el ratón */
+        nav ul li a:hover { background-color: #2ecc71; }
 
-        /* Estilos para menús desplegables */
         .dropdown-content {
             display: none;
             position: absolute;
-            background-color: #444; /* Fondo del menú desplegable */
+            background-color: #444;
             min-width: 160px;
             box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
             z-index: 1;
@@ -40,37 +40,38 @@
         }
         main { padding: 20px; max-width: 960px; margin: 20px auto; background-color: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         footer { text-align: center; padding: 20px; background-color: #2c3e50; color: white; margin-top: 20px; }
-        /* Puedes mover estos estilos a static/style.css */
+        */
+        /* EL CONTENIDO DE LA ETIQUETA STYLE DEBE SER MOVIFO A style.css */
     </style>
 </head>
 <body>
     <header>
-        <h1><a href="{{ url_for('index') }}">Halo eSports Manager</a></h1> {# <--- ¡CAMBIADO A 'index'! #}
+        <h1><a href="/frontend/">Halo eSports Manager</a></h1>
         <nav>
             <ul>
-                <li><a href="{{ url_for('show_players') }}">Jugadores</a></li>
-                <li><a href="{{ url_for('show_teams') }}">Equipos</a></li>
+                <li><a href="/frontend/players/view">Jugadores</a></li>
+                <li><a href="/frontend/teams/view">Equipos</a></li>
                 <li class="dropdown">
                     <a href="#" class="dropbtn">Crear</a>
                     <div class="dropdown-content">
-                        <a href="{{ url_for('form_create_player') }}">Crear Jugador</a>
-                        <a href="{{ url_for('form_team') }}">Crear Equipo</a>
+                        <a href="/frontend/form/players">Crear Jugador</a>
+                        <a href="/frontend/teams-form">Crear Equipo</a>
                     </div>
                 </li>
                 <li class="dropdown">
                     <a href="#" class="dropbtn">Historial</a>
                     <div class="dropdown-content">
-                        <a href="{{ url_for('show_deleted_players') }}">Jugadores Eliminados</a>
-                        <a href="{{ url_for('view_deleted_teams') }}">Equipos Eliminados</a>
+                        <a href="/frontend/deleted-players/view">Jugadores Eliminados</a>
+                        <a href="/frontend/teams/deleted/view">Equipos Eliminados</a>
                     </div>
                 </li>
                 <li class="dropdown">
                     <a href="#" class="dropbtn">Información</a>
                     <div class="dropdown-content">
-                        <a href="{{ url_for('developer_info') }}">Desarrollador</a>
-                        <a href="{{ url_for('project_objective') }}">Objetivo</a>
-                        <a href="{{ url_for('planning_info') }}">Planificación</a>
-                        <a href="{{ url_for('design_info') }}">Diseño</a>
+                        <a href="/frontend/info/developer">Desarrollador</a>
+                        <a href="/frontend/info/objective">Objetivo</a>
+                        <a href="/frontend/docs/planning">Planificación</a>
+                        <a href="/frontend/docs/design">Diseño</a>
                     </div>
                 </li>
             </ul>

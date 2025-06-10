@@ -1,26 +1,36 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Crear Equipo</title>
-</head>
-<body>
-    <h1>Formulario para Crear Equipo</h1>
-    <form action="/frontend/teams-form" method="post" enctype="multipart/form-data">
-        <label for="name">Nombre del Equipo:</label>
-        <input type="text" id="name" name="name" required><br>
+{% block title %}Crear Nuevo Equipo{% endblock %}
 
-        <label for="region">Región:</label>
-        <input type="text" id="region" name="region" required><br>
+{% block content %}
+    <h2 class="page-title">Crear Nuevo Equipo</h2>
 
-        <label for="championships">Campeonatos Ganados:</label>
-        <input type="number" id="championships" name="championships" min="0" required><br>
+    <div class="form-container">
+        <form action="/frontend/teams-form" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="name">Nombre del Equipo:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
 
-        <label for="image">Logo del equipo (.jpg):</label>
-        <input type="file" id="image" name="image" accept="image/jpeg" required><br>
+            <div class="form-group">
+                <label for="region">Región:</label>
+                <input type="text" id="region" name="region" required>
+            </div>
 
-        <button type="submit">Crear Equipo</button>
-    </form>
-</body>
-</html>
+            <div class="form-group">
+                <label for="championships">Campeonatos Ganados:</label>
+                <input type="number" id="championships" name="championships" value="0" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="image">Logo del Equipo (JPG):</label>
+                <input type="file" id="image" name="image" accept="image/jpeg" required>
+            </div>
+
+            <div class="form-buttons">
+                <button type="submit" class="btn btn-primary">Crear Equipo</button>
+                <a href="/frontend/teams/view" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

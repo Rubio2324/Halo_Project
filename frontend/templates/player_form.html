@@ -1,32 +1,51 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Crear Jugador</title>
-</head>
-<body>
-    <h1>Formulario para Crear Jugador</h1>
-    <form action="/frontend/players-form" method="post" enctype="multipart/form-data">
-        <label for="name">Nombre:</label>
-        <input type="text" id="name" name="name" required><br>
+{% block title %}Crear Nuevo Jugador{% endblock %}
 
-        <label for="gamertag">Gamertag:</label>
-        <input type="text" id="gamertag" name="gamertag" required><br>
+{% block content %}
+    <h2 class="page-title">Crear Nuevo Jugador</h2>
 
-        <label for="kills">Kills:</label>
-        <input type="number" id="kills" name="kills" min="0" required><br>
+    <div class="form-container">
+        <form action="/frontend/players-form" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="name">Nombre:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
 
-        <label for="deaths">Deaths:</label>
-        <input type="number" id="deaths" name="deaths" min="0" required><br>
+            <div class="form-group">
+                <label for="gamertag">Gamertag:</label>
+                <input type="text" id="gamertag" name="gamertag" required>
+            </div>
 
-        <label for="team_id">Team ID:</label>
-        <input type="number" id="team_id" name="team_id" placeholder="(opcional)"><br>
+            <div class="form-group">
+                <label for="kills">Kills:</label>
+                <input type="number" id="kills" name="kills" value="0" min="0" required>
+            </div>
 
-        <label for="image">Imagen (.jpg):</label>
-        <input type="file" id="image" name="image" accept="image/jpeg" required><br>
+            <div class="form-group">
+                <label for="deaths">Deaths:</label>
+                <input type="number" id="deaths" name="deaths" value="0" min="0" required>
+            </div>
 
-        <button type="submit">Crear Jugador</button>
-    </form>
-</body>
-</html>
+            <div class="form-group">
+                <label for="team_id">Equipo:</label>
+                <select id="team_id" name="team_id">
+                    <option value="">Seleccionar Equipo (Opcional)</option>
+                    {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="image">Imagen del Jugador (JPG):</label>
+                <input type="file" id="image" name="image" accept="image/jpeg" required>
+            </div>
+
+            <div class="form-buttons">
+                <button type="submit" class="btn btn-primary">Crear Jugador</button>
+                <a href="/frontend/players/view" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

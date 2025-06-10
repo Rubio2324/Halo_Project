@@ -1,0 +1,349 @@
+/* General Body & Typography */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #e0e0e0; /* Un gris más claro para el fondo general */
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Header & Navigation */
+header {
+    background-color: #2c3e50; /* Azul oscuro */
+    color: white;
+    padding: 15px 0;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+header h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 2.5em;
+    letter-spacing: 1px;
+}
+
+header h1 a {
+    color: white;
+    text-decoration: none;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+    display: flex;
+    justify-content: center;
+    background-color: #34495e; /* Un tono un poco más claro que el header */
+}
+
+nav ul li {
+    position: relative;
+}
+
+nav ul li a {
+    display: block;
+    padding: 15px 25px;
+    color: white;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+nav ul li a:hover {
+    background-color: #2ecc71; /* Verde esmeralda */
+}
+
+/* Dropdown Menu Styles */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #4a6480; /* Un tono intermedio para el dropdown */
+    min-width: 180px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.3);
+    z-index: 100; /* Asegura que esté por encima de otros elementos */
+    text-align: left;
+    border-radius: 5px;
+    overflow: hidden; /* Para esquinas redondeadas en items */
+}
+
+.dropdown-content a {
+    color: white;
+    padding: 12px 18px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-content a:hover {
+    background-color: #2ecc71; /* Mismo verde que el nav principal */
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Main Content Area */
+main {
+    padding: 30px;
+    max-width: 1200px; /* Aumentado para mejor visualización */
+    margin: 30px auto; /* Centra el contenido principal */
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    text-align: center; /* Centra el contenido dentro del main */
+}
+
+/* Headings and Titles */
+h2.page-title {
+    text-align: center;
+    color: #0056b3; /* Azul vibrante */
+    margin-bottom: 40px;
+    font-size: 2.2em;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 15px;
+    display: inline-block; /* Para que el borde inferior se ajuste al texto */
+}
+
+/* Forms */
+.form-container {
+    background-color: #f9f9f9;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    max-width: 600px;
+    margin: 30px auto; /* Centra el formulario */
+    text-align: left; /* Alinea el texto del formulario a la izquierda */
+    border: 1px solid #e0e0e0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="file"],
+.form-group select {
+    width: calc(100% - 22px); /* Ajusta para padding y borde */
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    box-sizing: border-box; /* Incluye padding y borde en el ancho total */
+}
+
+.form-group input[type="file"] {
+    padding: 5px; /* Menos padding para inputs de tipo file */
+}
+
+.form-group select {
+    appearance: none; /* Elimina estilos por defecto del select en algunos navegadores */
+    background-color: #fff;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13%205.4L146.2%20224.2%2018.8%2074.8c-1.6-1.6-3.6-2.4-5.6-2.4H10c-5.8%200-10.4%204.6-10.4%2010.4%200%202.4.8%204.6%202.4%206.2l136.2%20136.2c4.6%204.6%2011.6%204.6%2016.2%200L287%2091.4c1.6-1.6%202.4-3.6%202.4-5.6V80c0-5.8-4.6-10.4-10.4-10.4z%22%2F%3E%3C%2Fsvg%3E'); /* Flecha personalizada para select */
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 12px;
+}
+
+.form-buttons {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.btn {
+    background-color: #007bff; /* Azul primario */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 0 10px;
+}
+
+.btn:hover {
+    background-color: #0056b3; /* Azul más oscuro al pasar el ratón */
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #6c757d; /* Gris */
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-danger {
+    background-color: #dc3545; /* Rojo */
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-warning {
+    background-color: #ffc107; /* Amarillo */
+    color: #333; /* Texto oscuro para el amarillo */
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+/* Tables */
+.table-container {
+    width: 100%;
+    overflow-x: auto; /* Permite scroll horizontal en tablas grandes */
+    margin: 30px auto; /* Centra la tabla si el main es más ancho */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden; /* Asegura que los bordes de la tabla sean redondeados */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse; /* Elimina espacios entre celdas */
+    margin: 0 auto;
+    background-color: #fff;
+}
+
+table th, table td {
+    padding: 15px;
+    border: 1px solid #e0e0e0; /* Borde suave */
+    text-align: left;
+}
+
+table thead {
+    background-color: #007bff; /* Azul oscuro para el encabezado */
+    color: white;
+}
+
+table th {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 0.05em;
+}
+
+table tbody tr:nth-child(even) {
+    background-color: #f8f8f8; /* Rayas para mejor legibilidad */
+}
+
+table tbody tr:hover {
+    background-color: #e9f5ff; /* Resalta la fila al pasar el ratón */
+    transition: background-color 0.2s ease;
+}
+
+table td img {
+    max-width: 60px; /* Tamaño de la imagen en la tabla */
+    height: auto;
+    border-radius: 5px;
+    vertical-align: middle;
+}
+
+/* Search/Filter Forms above tables */
+.search-filter-container {
+    background-color: #f0f8ff; /* Un azul muy claro */
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
+    gap: 15px; /* Espacio entre los elementos del formulario */
+    justify-content: center; /* Centra los elementos */
+    box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+}
+
+.search-filter-container .form-group {
+    margin-bottom: 0; /* Elimina el margen inferior predeterminado del form-group */
+    flex-grow: 1; /* Permite que los elementos crezcan para llenar el espacio */
+    min-width: 200px; /* Ancho mínimo para cada elemento */
+}
+
+.search-filter-container .form-group label {
+    font-size: 0.9em;
+    color: #444;
+}
+
+.search-filter-container .btn {
+    padding: 10px 20px;
+    font-size: 0.95em;
+    margin: 0; /* Elimina los márgenes del botón para ajustar al gap */
+}
+
+/* Centering specific content that might not be covered by main's text-align */
+.centered-content {
+    text-align: center;
+    margin: 0 auto;
+}
+
+/* Messages (e.g., error messages) */
+.message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.message.error {
+    background-color: #f8d7da; /* Rojo claro */
+    color: #721c24; /* Rojo oscuro */
+    border: 1px solid #f5c6cb;
+}
+
+.message.success {
+    background-color: #d4edda; /* Verde claro */
+    color: #155724; /* Verde oscuro */
+    border: 1px solid #c3e6cb;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #34495e; /* Mismo color que el nav */
+    color: white;
+    margin-top: 40px;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    nav ul {
+        flex-direction: column;
+    }
+    nav ul li {
+        width: 100%;
+    }
+    .dropdown-content {
+        position: static; /* Ocupa el flujo normal en móviles */
+        width: 100%;
+        box-shadow: none;
+        border-radius: 0;
+    }
+    .search-filter-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-filter-container .form-group {
+        min-width: unset;
+    }
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    table, .table-container {
+        border-radius: 0; /* Elimina bordes redondeados en tablas para pantallas pequeñas */
+    }
+}
