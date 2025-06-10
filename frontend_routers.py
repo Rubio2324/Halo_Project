@@ -9,7 +9,6 @@ from pathlib import Path
 from utils.db import get_session
 from data.models_player import Player,DeletedPlayer
 from data.models_team import Team, DeletedTeam
-from fastapi.templating import Jinja2Templates
 from urllib.parse import urlencode
 
 def validar_extension_jpg(archivo: UploadFile):
@@ -17,8 +16,7 @@ def validar_extension_jpg(archivo: UploadFile):
     if ext != ".jpg":
         raise HTTPException(status_code=400, detail="Solo se permiten archivos con extensión .jpg")
 
-
-templates = Jinja2Templates(directory="frontend/templates")
+from main import templates, BASE_DIR as project_root_dir
 
 router = APIRouter(prefix="/frontend")
 
