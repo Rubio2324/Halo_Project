@@ -28,7 +28,7 @@ Puedes:
     version="1.0.0"
 )
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, name="index") # <--- Colócalo justo aquí, después de response_class=HTMLResponse
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
