@@ -45,32 +45,32 @@
 </head>
 <body>
     <header>
-        <h1><a href="/frontend/">Halo eSports Manager</a></h1> {# <--- CAMBIADO: URL directa con prefijo #}
+        <h1><a href="{{ url_for('index') }}">Halo eSports Manager</a></h1> {# <--- ¡CAMBIADO A 'index'! #}
         <nav>
             <ul>
-                <li><a href="/frontend/players/view">Jugadores</a></li> {# <--- CAMBIADO #}
-                <li><a href="/frontend/teams/view">Equipos</a></li> {# <--- CAMBIADO #}
+                <li><a href="{{ url_for('show_players') }}">Jugadores</a></li>
+                <li><a href="{{ url_for('show_teams') }}">Equipos</a></li>
                 <li class="dropdown">
                     <a href="#" class="dropbtn">Crear</a>
                     <div class="dropdown-content">
-                        <a href="/frontend/form/players">Crear Jugador</a> {# <--- CAMBIADO #}
-                        <a href="/frontend/teams-form">Crear Equipo</a> {# <--- CAMBIADO #}
+                        <a href="{{ url_for('form_create_player') }}">Crear Jugador</a>
+                        <a href="{{ url_for('form_team') }}">Crear Equipo</a>
                     </div>
                 </li>
                 <li class="dropdown">
                     <a href="#" class="dropbtn">Historial</a>
                     <div class="dropdown-content">
-                        <a href="/frontend/deleted-players/view">Jugadores Eliminados</a> {# <--- CAMBIADO #}
-                        <a href="/frontend/teams/deleted/view">Equipos Eliminados</a> {# <--- CAMBIADO #}
+                        <a href="{{ url_for('show_deleted_players') }}">Jugadores Eliminados</a>
+                        <a href="{{ url_for('view_deleted_teams') }}">Equipos Eliminados</a>
                     </div>
                 </li>
                 <li class="dropdown">
                     <a href="#" class="dropbtn">Información</a>
                     <div class="dropdown-content">
-                        <a href="/frontend/info/developer">Desarrollador</a> {# <--- CAMBIADO #}
-                        <a href="/frontend/info/objective">Objetivo</a> {# <--- CAMBIADO #}
-                        <a href="/frontend/docs/planning">Planificación</a> {# <--- CAMBIADO #}
-                        <a href="/frontend/docs/design">Diseño</a> {# <--- CAMBIADO #}
+                        <a href="{{ url_for('developer_info') }}">Desarrollador</a>
+                        <a href="{{ url_for('project_objective') }}">Objetivo</a>
+                        <a href="{{ url_for('planning_info') }}">Planificación</a>
+                        <a href="{{ url_for('design_info') }}">Diseño</a>
                     </div>
                 </li>
             </ul>
