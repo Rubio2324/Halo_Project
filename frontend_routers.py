@@ -485,17 +485,16 @@ def design_info(request: Request):
     return templates.TemplateResponse("design_info.html", {"request": request})
 
 # ---------------- APARTADO DE ESTADÍSTICAS ------------------------
-
 @router.get("/estadisticas", response_class=HTMLResponse, tags=["Estadísticas"])
 def show_statistics(request: Request, session: Session = Depends(get_session)):
     stats = {}
 
     # 1. Total de jugadores
-    # Usar .scalar_one() si esperas siempre un número (incluso 0 si no hay jugadores)
-    stats['total_jugadores'] = session.exec(select(func.count(Player.id))).scalar_one()
+    # Usar .one() para obtener el valor escalar directamente de la función de agregación
+    stats['total_jugadores'] = session.exec(select(func.count(Player.id))).one()
 
     # 2. Total de equipos
-    stats['total_equipos'] = session.exec(select(func.count(Team.id))).scalar_one()
+    stats['total_equipos'] = session.exec(select(func.count(Team.id))).one()
 
     # 3. Jugador con más kills (manejo de caso sin jugadores)
     top_player_kills = session.exec(select(Player).order_by(Player.kills.desc()).limit(1)).first()
@@ -513,7 +512,7 @@ def show_statistics(request: Request, session: Session = Depends(get_session)):
     stats['equipo_mas_campeonatos_valor'] = top_team_championships.championships if top_team_championships else 0
 
     # 6. Promedio de Kills por jugador
-    # Usar .scalar_one_or_none() porque sum() puede devolver None si no hay filas
+    # .scalar_one_or_none() aquí es apropiado para SUM si el resultado podría ser None (no hay filas)
     total_kills = session.exec(select(func.sum(Player.kills))).scalar_one_or_none() or 0
     total_players_for_avg = stats['total_jugadores'] # Reutilizamos el total de jugadores ya calculado
     stats['promedio_kills_por_jugador'] = round(total_kills / total_players_for_avg, 2) if total_players_for_avg > 0 else 0.0
