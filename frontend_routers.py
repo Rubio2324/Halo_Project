@@ -6,6 +6,10 @@ import shutil
 import os
 from pathlib import Path
 
+# IMPORTANTE: Ya no importamos templates ni BASE_DIR de main.py
+# Cada router/módulo que necesite Jinja2Templates debe inicializarlo por sí mismo
+from fastapi.templating import Jinja2Templates
+
 from utils.db import get_session
 from data.models_player import Player, DeletedPlayer
 from data.models_team import Team, DeletedTeam
@@ -16,8 +20,15 @@ def validar_extension_jpg(archivo: UploadFile):
     if ext != ".jpg":
         raise HTTPException(status_code=400, detail="Solo se permiten archivos con extensión .jpg")
 
-# Importación de templates y BASE_DIR (renombrado a project_root_dir) desde main.py
-from main import templates, BASE_DIR as project_root_dir
+# Definir la ruta base para este módulo.
+# Asumiendo que frontend_routers.py está en la raíz de 'src' (project_root_dir)
+# y que 'static' y 'frontend/templates' están directamente bajo 'src'.
+# Si tu frontend_routers.py estuviera en 'src/frontend/', entonces Path(__file__).resolve().parent.parent
+# Si main.py y frontend_routers.py están ambos en la misma carpeta 'src':
+project_root_dir = Path(__file__).resolve().parent
+
+# Inicializar templates para este router. La carpeta de plantillas es 'frontend/templates' relativa a project_root_dir
+templates = Jinja2Templates(directory=str(project_root_dir / "frontend" / "templates"))
 
 router = APIRouter(prefix="/frontend")
 
@@ -200,7 +211,6 @@ async def update_player_form(
         validar_extension_jpg(image)
         static_dir = project_root_dir / "static"
         os.makedirs(static_dir, exist_ok=True)
-        # CORRECCIÓN: Ya estaba bien aquí, usando Path para la ruta absoluta
         image_path = static_dir / image.filename
         with open(image_path, "wb") as buffer:
             buffer.write(await image.read())
@@ -240,7 +250,6 @@ def view_deleted_teams(request: Request, session: Session = Depends(get_session)
 
 @router.get("/teams-form", response_class=HTMLResponse, tags=["Frontend Teams"])
 def form_team(request: Request):
-    # CORRECCIÓN: Usar el nombre de plantilla correcto, "team_form.html"
     return templates.TemplateResponse("team_form.html", {"request": request})
 
 @router.post("/teams-form", tags=["Frontend Teams"])
@@ -276,8 +285,7 @@ async def create_team_form(
 
     return RedirectResponse(url="/frontend/teams/view", status_code=303)
 
-# El siguiente bloque es el endpoint de eliminación de equipo que usa urlencode y es el que DEBE QUEDARSE.
-# El otro idéntico (sin urlencode) que estaba arriba ha sido ELIMINADO.
+# ÚNICA FUNCIÓN delete_team_frontend - la duplicada ha sido eliminada.
 @router.post("/teams/delete/{team_id}", tags=["Frontend Teams"])
 def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
     team = session.get(Team, team_id)
@@ -314,7 +322,7 @@ def delete_team_permanently(team_id: int, session: Session = Depends(get_session
     session.commit()
     return RedirectResponse(url="/frontend/teams/deleted/view", status_code=303)
 
-# GET: Mostrar formulario de edición de equipo
+# GET: Mostrar formulario de edición
 @router.get("/teams/edit/{team_id}", response_class=HTMLResponse, tags=["Frontend Teams"])
 def edit_team_form(team_id: int, request: Request, session: Session = Depends(get_session)):
     team = session.get(Team, team_id)
@@ -323,7 +331,7 @@ def edit_team_form(team_id: int, request: Request, session: Session = Depends(ge
     return templates.TemplateResponse("edit_team.html", {"request": request, "team": team})
 
 
-# POST: Procesar formulario de edición de equipo
+# POST: Procesar formulario de edición
 @router.post("/teams/edit/{team_id}", tags=["Frontend Teams"])
 async def update_team_form(
     team_id: int,
@@ -345,7 +353,6 @@ async def update_team_form(
         validar_extension_jpg(image)
         static_dir = project_root_dir / "static"
         os.makedirs(static_dir, exist_ok=True)
-        # CORRECCIÓN: Ya estaba bien aquí, usando Path para la ruta absoluta
         image_path = static_dir / image.filename
         with open(image_path, "wb") as buffer:
             buffer.write(await image.read())
