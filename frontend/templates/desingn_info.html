@@ -1,16 +1,16 @@
- "developer_info.html": """
 {% extends "base.html" %}
-
-{% block title %}Información del Desarrollador{% endblock %}
-
+{% block title %}Diseño del Proyecto{% endblock %}
 {% block content %}
-<h2>Información del Desarrollador</h2>
+<h2>📐 Diseño del Sistema</h2>
+<p>El diseño sigue una arquitectura MVC (Modelo - Vista - Controlador) con las siguientes partes:</p>
 <ul>
-    <li><strong>Nombre:</strong> Tu Nombre</li>
-    <li><strong>Email:</strong> tunombre@correo.com</li>
-    <li><strong>Rol:</strong> Desarrollador Backend y Frontend</li>
-    <li><strong>Universidad:</strong> Nombre de tu universidad</li>
-    <li><strong>Proyecto:</strong> Gestor de Jugadores y Equipos - Halo eSports</li>
+    <li><strong>Modelos:</strong> SQLModel para jugadores, equipos y eliminados.</li>
+    <li><strong>Vistas:</strong> Plantillas HTML con Jinja2.</li>
+    <li><strong>Controlador:</strong> Rutas FastAPI organizadas por funcionalidad.</li>
 </ul>
+<p>También se incluyen validaciones, gestión de imágenes y restauración de datos.</p>
+
+<h3>Diagrama de Clases</h3>
+<img src="https://ufhpjqntmtiyxplisbkg.supabase.co/storage/v1/object/sign/halo-imagenes/Diagrama%20de%20Clases%20Proyecto.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV80NTYyYWRmMi05NzRhLTQ5N2ItYTkwYS1kZDdhNjAxNjIxMzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJoYWxvLWltYWdlbmVzL0RpYWdyYW1hIGRlIENsYXNlcyBQcm95ZWN0by5wbmciLCJpYXQiOjE3NDk1Njc1MjQsImV4cCI6MTc4MTEwMzUyNH0.kEQe4ituemx6U08mX3oxFsIpoUCHpAe3D9G81gA8jt0" alt="Diagrama de Clases del Sistema" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+
 {% endblock %}
-""",
