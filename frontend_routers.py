@@ -1,10 +1,11 @@
+# frontend_routers.py
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session, select
 from typing import Optional
 import shutil
 import os
-from pathlib import Path
+from pathlib import Path # Asegúrate de que Path esté importado
 
 from utils.db import get_session
 from data.models_player import Player,DeletedPlayer
@@ -17,8 +18,17 @@ def validar_extension_jpg(archivo: UploadFile):
     if ext != ".jpg":
         raise HTTPException(status_code=400, detail="Solo se permiten archivos con extensión .jpg")
 
+# --- ### START FIX: Corregido el path para Jinja2Templates ### ---
+# Obtiene el path absoluto del directorio que contiene este archivo (frontend_routers.py)
+current_file_dir = Path(__file__).resolve().parent
+# Sube dos niveles para llegar al directorio raíz del proyecto
+# (Ejemplo: de 'Halo_Project/frontend/' a 'Halo_Project/')
+project_root_dir = current_file_dir.parent
 
-templates = Jinja2Templates(directory="frontend/templates")
+# Ahora, define el directorio de plantillas de forma relativa a la raíz del proyecto
+templates_dir = project_root_dir / "frontend" / "templates"
+templates = Jinja2Templates(directory=templates_dir)
+# --- ### END FIX ### ---
 
 router = APIRouter(prefix="/frontend")
 
@@ -75,12 +85,18 @@ async def create_player_form(
 ):
     validar_extension_jpg(image)
 
-    os.makedirs("static", exist_ok=True)
+    # --- ### START FIX: Corregido el path para guardar imágenes estáticas ### ---
+    # Asegúrate de que el directorio static exista y esté en la raíz del proyecto
+    static_dir = project_root_dir / "static"
+    os.makedirs(static_dir, exist_ok=True)
 
-    image_path = f"static/{image.filename}"
+    # Usa objetos Path para unir los paths de forma segura
+    image_path = static_dir / image.filename
+    # --- ### END FIX ### ---
     with open(image_path, "wb") as buffer:
         buffer.write(await image.read())
 
+    # La URL para el navegador debe seguir siendo relativa a la raíz del servidor web
     image_url = f"/static/{image.filename}"
 
     if team_id:
@@ -198,8 +214,11 @@ async def update_player_form(
 
     if image:
         validar_extension_jpg(image)
-        os.makedirs("static", exist_ok=True)
-        image_path = f"static/{image.filename}"
+        # --- ### START FIX: Corregido el path para actualizar imágenes estáticas ### ---
+        static_dir = project_root_dir / "static" # Usa el path estático corregido
+        os.makedirs(static_dir, exist_ok=True)
+        image_path = static_dir / image.filename
+        # --- ### END FIX ### ---
         with open(image_path, "wb") as buffer:
             buffer.write(await image.read())
         player.image_url = f"/static/{image.filename}"
@@ -253,11 +272,13 @@ async def create_team_form(
 ):
     validar_extension_jpg(image)
 
-    # Crear carpeta si no existe
-    if not os.path.exists("static"):
-        os.makedirs("static")
+    # --- ### START FIX: Corregido el path para crear imágenes estáticas ### ---
+    # Usa el path estático corregido
+    static_dir = project_root_dir / "static"
+    os.makedirs(static_dir, exist_ok=True)
 
-    image_path = f"static/{image.filename}"
+    image_path = static_dir / image.filename
+    # --- ### END FIX ### ---
     with open(image_path, "wb") as buffer:
         buffer.write(await image.read())
 
@@ -280,32 +301,9 @@ async def create_team_form(
 def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
     team = session.get(Team, team_id)
     if not team:
-        raise HTTPException(status_code=404, detail="Equipo no encontrado.")
-
-    players = session.exec(select(Player).where(Player.team_id == team_id)).all()
-    if players:
-        raise HTTPException(status_code=400, detail="No se puede eliminar el equipo porque tiene jugadores asignados.")
-
-    deleted_team = DeletedTeam(
-        id=team.id,
-        name=team.name,
-        region=team.region,
-        championships=team.championships,
-        image_url=team.image_url
-    )
-
-    session.add(deleted_team)
-    session.delete(team)
-    session.commit()
-
-    return RedirectResponse(url="/frontend/teams/view", status_code=303)
-
-
-@router.post("/teams/delete/{team_id}", tags=["Frontend Teams"])
-def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
-    team = session.get(Team, team_id)
-    if not team:
-        return RedirectResponse(url="/frontend/teams/view?error=Equipo%20no%20encontrado", status_code=303)
+        # Changed to RedirectResponse with error message in URL
+        message = urlencode({"error": "Equipo no encontrado."})
+        return RedirectResponse(url=f"/frontend/teams/view?{message}", status_code=303)
 
     players = session.exec(select(Player).where(Player.team_id == team_id)).all()
     if players:
@@ -327,7 +325,6 @@ def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
 
     return RedirectResponse(url="/frontend/teams/view", status_code=303)
 
-
 @router.post("/teams/delete-permanent/{team_id}", tags=["Frontend Teams"])
 def delete_team_permanently(team_id: int, session: Session = Depends(get_session)):
     team = session.get(DeletedTeam, team_id)
@@ -337,8 +334,6 @@ def delete_team_permanently(team_id: int, session: Session = Depends(get_session
     session.delete(team)
     session.commit()
     return RedirectResponse(url="/frontend/teams/deleted/view", status_code=303)
-
-from fastapi import UploadFile, File
 
 # GET: Mostrar formulario de edición
 @router.get("/teams/edit/{team_id}", response_class=HTMLResponse, tags=["Frontend Teams"])
@@ -369,8 +364,11 @@ async def update_team_form(
 
     if image:
         validar_extension_jpg(image)
-        os.makedirs("static", exist_ok=True)
-        image_path = f"static/{image.filename}"
+        # --- ### START FIX: Corregido el path para actualizar imágenes estáticas ### ---
+        static_dir = project_root_dir / "static" # Usa el path estático corregido
+        os.makedirs(static_dir, exist_ok=True)
+        image_path = static_dir / image.filename
+        # --- ### END FIX ### ---
         with open(image_path, "wb") as buffer:
             buffer.write(await image.read())
         team.image_url = f"/static/{image.filename}"
@@ -396,4 +394,3 @@ def planning_info(request: Request):
 @router.get("/docs/design", response_class=HTMLResponse, tags=["Documentación"])
 def design_info(request: Request):
     return templates.TemplateResponse("design_info.html", {"request": request})
-
