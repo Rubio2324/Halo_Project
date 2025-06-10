@@ -8,6 +8,7 @@
 {% if players %}
 <table border="1">
     <tr>
+        <th>ID</th>
         <th>Nombre</th>
         <th>Gamertag</th>
         <th>Kills</th>
@@ -18,6 +19,7 @@
     </tr>
     {% for player in players %}
     <tr>
+        <td>{{ player.id }}</td>
         <td>{{ player.name }}</td>
         <td>{{ player.gamertag }}</td>
         <td>{{ player.kills }}</td>

@@ -8,6 +8,7 @@
 {% if teams %}
 <table border="1">
     <tr>
+        <th>ID</th>
         <th>Nombre</th>
         <th>Región</th>
         <th>Campeonatos</th>
@@ -16,6 +17,7 @@
     </tr>
     {% for team in teams %}
     <tr>
+        <td>{{ team.id }}</td>
         <td>{{ team.name }}</td>
         <td>{{ team.region }}</td>
         <td>{{ team.championships }}</td>

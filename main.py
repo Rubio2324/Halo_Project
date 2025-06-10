@@ -23,13 +23,8 @@ Puedes:
     version="1.0.0"
 )
 
-app.mount(
-    "/static",
-    StaticFiles(directory=os.path.join("frontend", "static")),
-    name="static"
-)
 
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(frontend_router)
 app.include_router(router)  # Incluye los endpoints de players y teams
 
