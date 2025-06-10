@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from typing import Optional
 import shutil
 import os
+from pathlib import Path
 
 from utils.db import get_session
 from data.models_player import Player,DeletedPlayer
@@ -23,6 +24,42 @@ router = APIRouter(prefix="/frontend")
 
 print("✅ frontend_routers.py cargado correctamente")
 
+#---------------------------- INFORMACION ----------------------------------------------------------------------
+@router.get("/info/developer", tags=["Información"])
+def developer_info():
+    return {
+        "developer": {
+            "name": "Tu Nombre",
+            "email": "tunombre@correo.com",
+            "role": "Desarrollador Backend y Frontend",
+            "university": "Nombre de tu universidad",
+            "project": "Gestor de Jugadores y Equipos - Halo eSports"
+        }
+    }
+
+@router.get("/info/objective", tags=["Información"])
+def project_objective():
+    return {
+        "objective": "Desarrollar un sistema web completo que permita gestionar jugadores y equipos del universo Halo en el contexto de eSports, incluyendo operaciones CRUD, historial de eliminaciones, restauración, búsqueda avanzada y despliegue."
+    }
+
+@router.get("/docs/planning", tags=["Documentación"])
+def planning_info():
+    return {
+        "planning": {
+            "description": "Esta fase incluye la definición del alcance del proyecto, recolección de requisitos, análisis de herramientas, modelado inicial de datos y diagramas de flujo.",
+            "tools_used": ["Diagrama entidad-relación", "Casos de uso", "Trello", "Notion"]
+        }
+    }
+
+@router.get("/docs/design", tags=["Documentación"])
+def design_info():
+    return {
+        "design": {
+            "description": "Se desarrolló el diseño del sistema backend y frontend, incluyendo rutas de API, plantillas HTML, y estructura de carpetas, priorizando la modularidad y escalabilidad.",
+            "tools_used": ["FastAPI", "Jinja2", "SQLModel", "HTML/CSS"]
+        }
+    }
 
 #---------------------------- PLAYERS --------------------------------------------------------------------------
 @router.get("/players/view", response_class=HTMLResponse, tags=["Frontend Player"])
