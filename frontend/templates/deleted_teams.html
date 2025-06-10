@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Equipos Eliminados{% endblock %}
+
+{% block content %}
+<h2>Equipos Eliminados</h2>
+
+{% if teams %}
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Región</th>
+        <th>Campeonatos</th>
+        <th>Imagen</th>
+        <th>Acciones</th>
+    </tr>
+    {% for team in teams %}
+    <tr>
+        <td>{{ team.name }}</td>
+        <td>{{ team.region }}</td>
+        <td>{{ team.championships }}</td>
+        <td>
+            {% if team.image_url %}
+                <img src="{{ team.image_url }}" alt="Logo del equipo" width="80">
+            {% else %}
+                Sin imagen
+            {% endif %}
+        </td>
+        <td>
+            <!-- Restaurar -->
+            <form method="post" action="/frontend/teams/restore/{{ team.id }}" style="display:inline;">
+                <button type="submit">🔁 Restaurar</button>
+            </form>
+
+            <!-- Eliminar permanente -->
+            <form method="post" action="/frontend/teams/delete-permanent/{{ team.id }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente este equipo?');">
+                <button type="submit">❌ Borrar definitivo</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No hay equipos eliminados.</p>
+{% endif %}
+
+{% endblock %}

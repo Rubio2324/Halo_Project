@@ -5,6 +5,7 @@
 {% block content %}
 <h2>Lista de Jugadores</h2>
 
+{% if players %}
 <table border="1">
     <tr>
         <th>Nombre</th>
@@ -13,6 +14,7 @@
         <th>Deaths</th>
         <th>Equipo</th>
         <th>Imagen</th>
+        <th>Acciones</th>
     </tr>
     {% for player in players %}
     <tr>
@@ -28,7 +30,15 @@
                 Sin imagen
             {% endif %}
         </td>
+        <td>
+            <form action="/frontend/players/delete/{{ player.id }}" method="post" style="display:inline;">
+                <button type="submit" onclick="return confirm('¿Estás seguro de eliminar este jugador?')">Eliminar</button>
+            </form>
+        </td>
     </tr>
     {% endfor %}
 </table>
+{% else %}
+<p>No hay jugadores registrados.</p>
+{% endif %}
 {% endblock %}

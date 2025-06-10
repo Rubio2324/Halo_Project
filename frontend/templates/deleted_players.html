@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Jugadores Eliminados{% endblock %}
+
+{% block content %}
+<h2>Jugadores Eliminados</h2>
+
+{% if players %}
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Gamertag</th>
+        <th>Kills</th>
+        <th>Deaths</th>
+        <th>Equipo</th>
+        <th>Imagen</th>
+        <th>Acciones</th>
+    </tr>
+    {% for player in players %}
+    <tr>
+        <td>{{ player.name }}</td>
+        <td>{{ player.gamertag }}</td>
+        <td>{{ player.kills }}</td>
+        <td>{{ player.deaths }}</td>
+        <td>{{ player.team_id }}</td>
+        <td>
+            {% if player.image_url %}
+                <img src="{{ player.image_url }}" alt="Imagen" width="80">
+            {% else %}
+                Sin imagen
+            {% endif %}
+        </td>
+        <td>
+            <form method="post" action="/frontend/players/restore/{{ player.id }}" style="display:inline;">
+                <button type="submit">🔁 Restaurar</button>
+            </form>
+            <form method="post" action="/frontend/deleted-players/delete/{{ player.id }}" style="display:inline;">
+                <button type="submit" onclick="return confirm('¿Eliminar permanentemente este jugador?')">❌ Borrar definitivo</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No hay jugadores eliminados.</p>
+{% endif %}
+{% endblock %}

@@ -5,12 +5,14 @@
 {% block content %}
 <h2>Lista de Equipos</h2>
 
+{% if teams %}
 <table border="1">
     <tr>
         <th>Nombre</th>
         <th>Región</th>
         <th>Campeonatos</th>
         <th>Imagen</th>
+        <th>Acciones</th>
     </tr>
     {% for team in teams %}
     <tr>
@@ -24,7 +26,15 @@
                 Sin imagen
             {% endif %}
         </td>
+        <td>
+            <form action="/frontend/teams/delete/{{ team.id }}" method="post" style="display:inline;">
+                <button type="submit" onclick="return confirm('¿Eliminar este equipo?')">Eliminar</button>
+            </form>
+        </td>
     </tr>
     {% endfor %}
 </table>
+{% else %}
+<p>No hay equipos registrados.</p>
+{% endif %}
 {% endblock %}

@@ -8,6 +8,7 @@ from utils.db import create_db_and_tables, get_session
 from routers import router  # Importa el router con endpoints de players y teams
 from fastapi.staticfiles import StaticFiles
 from frontend_routers import router as frontend_router
+import os
 
 app = FastAPI(
     title="API de Halo eSports",
@@ -20,6 +21,12 @@ Puedes:
 - Registrar y administrar equipos.
 """,
     version="1.0.0"
+)
+
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join("frontend", "static")),
+    name="static"
 )
 
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
