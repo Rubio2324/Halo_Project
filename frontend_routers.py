@@ -9,6 +9,7 @@ from utils.db import get_session
 from data.models_player import Player,DeletedPlayer
 from data.models_team import Team, DeletedTeam
 from fastapi.templating import Jinja2Templates
+from urllib.parse import urlencode
 
 def validar_extension_jpg(archivo: UploadFile):
     ext = os.path.splitext(archivo.filename)[1].lower()
@@ -27,7 +28,27 @@ print("✅ frontend_routers.py cargado correctamente")
 @router.get("/players/view", response_class=HTMLResponse, tags=["Frontend Player"])
 def show_players(request: Request, session: Session = Depends(get_session)):
     players = session.exec(select(Player)).all()
-    return templates.TemplateResponse("players.html", {"request": request, "players": players})
+    teams = session.exec(select(Team)).all()
+    return templates.TemplateResponse("players.html", {"request": request, "players": players, "teams": teams})
+
+@router.get("/players/search", response_class=HTMLResponse, tags=["Frontend Player"])
+def search_players(
+    request: Request,
+    name: Optional[str] = None,
+    team_id: Optional[int] = None,
+    session: Session = Depends(get_session)
+):
+    query = select(Player)
+
+    if name:
+        query = query.where(Player.name.ilike(f"%{name}%"))
+    if team_id is not None:
+        query = query.where(Player.team_id == team_id)
+
+    players = session.exec(query).all()
+    teams = session.exec(select(Team)).all()  # Para el formulario
+
+    return templates.TemplateResponse("players.html", {"request": request, "players": players, "teams": teams})
 
 @router.get("/deleted-players/view", response_class=HTMLResponse, tags=["Frontend Player"])
 def show_deleted_players(request: Request, session: Session = Depends(get_session)):
@@ -139,6 +160,56 @@ def delete_player_permanently(player_id: int, session: Session = Depends(get_ses
     session.commit()
     return RedirectResponse("/frontend/deleted-players/view", status_code=303)
 
+@router.get("/players/edit/{player_id}", response_class=HTMLResponse, tags=["Frontend Player"])
+def edit_player_form(player_id: int, request: Request, session: Session = Depends(get_session)):
+    player = session.get(Player, player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado.")
+
+    teams = session.exec(select(Team)).all()
+    return templates.TemplateResponse("edit_player.html", {"request": request, "player": player, "teams": teams})
+
+
+@router.post("/players/update/{player_id}", tags=["Frontend Player"])
+async def update_player_form(
+    player_id: int,
+    name: str = Form(...),
+    gamertag: str = Form(...),
+    kills: int = Form(...),
+    deaths: int = Form(...),
+    team_id: Optional[int] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    session: Session = Depends(get_session)
+):
+    player = session.get(Player, player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado.")
+
+    if team_id:
+        team = session.get(Team, team_id)
+        if not team:
+            raise HTTPException(status_code=400, detail="Equipo no válido.")
+
+    player.name = name
+    player.gamertag = gamertag
+    player.kills = kills
+    player.deaths = deaths
+    player.team_id = team_id
+
+    if image:
+        validar_extension_jpg(image)
+        os.makedirs("static", exist_ok=True)
+        image_path = f"static/{image.filename}"
+        with open(image_path, "wb") as buffer:
+            buffer.write(await image.read())
+        player.image_url = f"/static/{image.filename}"
+
+    session.add(player)
+    session.commit()
+    session.refresh(player)
+
+    return RedirectResponse(url="/frontend/players/view", status_code=303)
+
 
 
 
@@ -146,6 +217,21 @@ def delete_player_permanently(player_id: int, session: Session = Depends(get_ses
 @router.get("/teams/view", response_class=HTMLResponse , tags=["Frontend Teams"])
 def show_teams(request: Request, session: Session = Depends(get_session)):
     teams = session.exec(select(Team)).all()
+    return templates.TemplateResponse("teams.html", {"request": request, "teams": teams})
+
+@router.get("/teams/search", response_class=HTMLResponse, tags=["Frontend Teams"])
+def search_teams(
+    request: Request,
+    name: Optional[str] = None,
+    championships: Optional[int] = None,
+    session: Session = Depends(get_session)
+):
+    query = select(Team)
+    if name:
+        query = query.where(Team.name.ilike(f"%{name}%"))
+    if championships is not None:
+        query = query.where(Team.championships == championships)
+    teams = session.exec(query).all()
     return templates.TemplateResponse("teams.html", {"request": request, "teams": teams})
 
 @router.get("/teams/deleted/view", response_class=HTMLResponse, tags=["Frontend Teams"])
@@ -196,6 +282,10 @@ def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
     if not team:
         raise HTTPException(status_code=404, detail="Equipo no encontrado.")
 
+    players = session.exec(select(Player).where(Player.team_id == team_id)).all()
+    if players:
+        raise HTTPException(status_code=400, detail="No se puede eliminar el equipo porque tiene jugadores asignados.")
+
     deleted_team = DeletedTeam(
         id=team.id,
         name=team.name,
@@ -210,24 +300,32 @@ def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
 
     return RedirectResponse(url="/frontend/teams/view", status_code=303)
 
-@router.post("/teams/restore/{team_id}", tags=["Frontend Teams"])
-def restore_team_frontend(team_id: int, session: Session = Depends(get_session)):
-    deleted_team = session.get(DeletedTeam, team_id)
-    if not deleted_team:
-        raise HTTPException(status_code=404, detail="Equipo eliminado no encontrado")
 
-    restored_team = Team(
-        id=deleted_team.id,
-        name=deleted_team.name,
-        region=deleted_team.region,
-        championships=deleted_team.championships,
-        image_url=deleted_team.image_url
+@router.post("/teams/delete/{team_id}", tags=["Frontend Teams"])
+def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
+    team = session.get(Team, team_id)
+    if not team:
+        return RedirectResponse(url="/frontend/teams/view?error=Equipo%20no%20encontrado", status_code=303)
+
+    players = session.exec(select(Player).where(Player.team_id == team_id)).all()
+    if players:
+        # Redirige con mensaje de error si hay jugadores asignados
+        message = urlencode({"error": "No se puede eliminar el equipo porque tiene jugadores asignados."})
+        return RedirectResponse(url=f"/frontend/teams/view?{message}", status_code=303)
+
+    deleted_team = DeletedTeam(
+        id=team.id,
+        name=team.name,
+        region=team.region,
+        championships=team.championships,
+        image_url=team.image_url
     )
 
-    session.add(restored_team)
-    session.delete(deleted_team)
+    session.add(deleted_team)
+    session.delete(team)
     session.commit()
-    return RedirectResponse(url="/frontend/teams/deleted/view", status_code=303)
+
+    return RedirectResponse(url="/frontend/teams/view", status_code=303)
 
 
 @router.post("/teams/delete-permanent/{team_id}", tags=["Frontend Teams"])
@@ -240,5 +338,45 @@ def delete_team_permanently(team_id: int, session: Session = Depends(get_session
     session.commit()
     return RedirectResponse(url="/frontend/teams/deleted/view", status_code=303)
 
+from fastapi import UploadFile, File
+
+# GET: Mostrar formulario de edición
+@router.get("/teams/edit/{team_id}", response_class=HTMLResponse, tags=["Frontend Teams"])
+def edit_team_form(team_id: int, request: Request, session: Session = Depends(get_session)):
+    team = session.get(Team, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    return templates.TemplateResponse("edit_team.html", {"request": request, "team": team})
+
+
+# POST: Procesar formulario de edición
+@router.post("/teams/edit/{team_id}", tags=["Frontend Teams"])
+async def update_team_form(
+    team_id: int,
+    name: str = Form(...),
+    region: str = Form(...),
+    championships: int = Form(...),
+    image: Optional[UploadFile] = File(None),
+    session: Session = Depends(get_session)
+):
+    team = session.get(Team, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+
+    team.name = name
+    team.region = region
+    team.championships = championships
+
+    if image:
+        validar_extension_jpg(image)
+        os.makedirs("static", exist_ok=True)
+        image_path = f"static/{image.filename}"
+        with open(image_path, "wb") as buffer:
+            buffer.write(await image.read())
+        team.image_url = f"/static/{image.filename}"
+
+    session.add(team)
+    session.commit()
+    return RedirectResponse(url="/frontend/teams/view", status_code=303)
 
 

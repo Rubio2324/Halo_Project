@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Jugador{% endblock %}
+
+{% block content %}
+<h2>Editar Jugador</h2>
+
+<form action="/frontend/players/update/{{ player.id }}" method="post" enctype="multipart/form-data">
+    <label for="name">Nombre:</label><br>
+    <input type="text" name="name" value="{{ player.name }}" required><br>
+
+    <label for="gamertag">Gamertag:</label><br>
+    <input type="text" name="gamertag" value="{{ player.gamertag }}" required><br>
+
+    <label for="kills">Kills:</label><br>
+    <input type="number" name="kills" value="{{ player.kills }}" required><br>
+
+    <label for="deaths">Deaths:</label><br>
+    <input type="number" name="deaths" value="{{ player.deaths }}" required><br>
+
+    <label for="team_id">Equipo:</label><br>
+    <select name="team_id" required>
+        {% for team in teams %}
+        <option value="{{ team.id }}" {% if team.id == player.team_id %}selected{% endif %}>{{ team.name }}</option>
+        {% endfor %}
+    </select><br>
+
+    <label>Imagen actual:</label><br>
+    {% if player.image_url %}
+        <img src="{{ player.image_url }}" alt="Imagen" width="100"><br>
+    {% else %}
+        Sin imagen<br>
+    {% endif %}
+
+    <label for="image">Nueva Imagen (.jpg):</label><br>
+    <input type="file" name="image"><br><br>
+
+    <button type="submit">💾 Guardar cambios</button>
+
+</form>
+
+<a href="/frontend/teams/view">⬅️ Volver a la lista</a>
+{% endblock %}
