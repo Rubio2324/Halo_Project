@@ -355,6 +355,43 @@ def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
 
     return RedirectResponse(url="/frontend/teams/view", status_code=303)
 
+@router.post("/teams/restore/{team_id}", tags=["Frontend Teams"])
+def restore_deleted_team(team_id: int, session: Session = Depends(get_session)):
+    try:
+        team = session.get(DeletedTeam, team_id) # Busca en DeletedTeam
+        if not team:
+            raise HTTPException(status_code=404, detail="Equipo eliminado no encontrado.")
+
+        # Opcional: Validar si el equipo ya existe en la tabla de Team principal con el mismo ID
+        # Esto es importante si el ID no es auto-generado al restaurar o si hay UNIQUE constraints por nombre
+        # Si el ID es una PK y se reutiliza, y SQLModel maneja bien los IDs, esta parte puede ser omitida.
+        # current_team = session.get(Team, team_id)
+        # if current_team:
+        #     raise HTTPException(status_code=400, detail=f"El equipo con ID {team_id} ya existe en la tabla principal.")
+
+        restored_team = Team( # Crea una nueva instancia del modelo Team
+            id=team.id,
+            name=team.name,
+            region=team.region,
+            championships=team.championships,
+            image_url=team.image_url
+        )
+
+        session.add(restored_team) # Añade a la tabla Team
+        session.delete(team) # Elimina de la tabla DeletedTeam
+        session.commit()
+        print(f"DEBUG: Equipo '{restored_team.name}' (ID: {restored_team.id}) restaurado exitosamente.")
+        return RedirectResponse(url="/frontend/teams/view", status_code=303)
+
+    except HTTPException as e:
+        session.rollback()
+        print(f"ERROR: HTTPException al restaurar equipo: {e.detail}")
+        raise e
+    except Exception as e:
+        session.rollback()
+        print(f"ERROR: Error inesperado al restaurar equipo: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor al restaurar equipo: {e}")
+
 
 @router.post("/teams/delete-permanent/{team_id}", tags=["Frontend Teams"])
 def delete_team_permanently(team_id: int, session: Session = Depends(get_session)):
