@@ -69,7 +69,7 @@ def reset_all(session: Session = Depends(get_session)):
     return {"message": "Todos los jugadores, equipos y registros históricos eliminados. Secuencias reiniciadas."}
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException): # Añadido tipado para Request y HTTPException
+async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={
