@@ -1,36 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Halo eSports Project{% endblock %}
+{% block title %}Inicio - Halo eSports Project{% endblock %}
 
 {% block content %}
-<header>
-    <h1>Bienvenido al Proyecto Halo eSports</h1>
+<section class="welcome">
+    <h2>Bienvenido al Proyecto Halo eSports</h2>
     <p>Gestiona jugadores y equipos de Halo de forma eficiente.</p>
-</header>
+</section>
 
-<nav>
-    <h2>Navegación</h2>
-    <ul>
-        <li><a href="/frontend/players/view">Ver Jugadores Existentes</a></li>
-        <li><a href="/frontend/form/players">Crear Nuevo Jugador</a></li>
-        <li><a href="/frontend/deleted-players/view">Ver Jugadores Eliminados</a></li>
-        <li><a href="/frontend/teams/view">Ver Equipos Existentes</a></li>
-        <li><a href="/frontend/teams-form">Crear Nuevo Equipo</a></li>
-        <li><a href="/frontend/teams/deleted/view">Ver Equipos Eliminados</a></li>
-        <hr>
-        <li><a href="/frontend/info/developer">Información del Desarrollador</a></li>
-        <li><a href="/frontend/info/objective">Objetivo del Proyecto</a></li>
-        <li><a href="/frontend/docs/planning">Información de Planificación</a></li>
-        <li><a href="/frontend/docs/design">Diseño del Sistema</a></li>
-    </ul>
-</nav>
-
-<section class="info">
+<section class="about">
     <h2>Acerca de este Proyecto</h2>
     <p>Este es un sistema de gestión integral para comunidades y ligas de Halo eSports, permitiendo un fácil seguimiento de jugadores, equipos y sus estadísticas. Desarrollado con FastAPI, SQLModel y Jinja2.</p>
 </section>
-
-<footer>
-    <p>&copy; 2024 Proyecto Halo eSports. Todos los derechos reservados.</p>
-</footer>
 {% endblock %}
