@@ -1,15 +1,13 @@
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session, select
-from typing import Optional, Union, List # Añadido List para consistencia, aunque no se usa directamente en este snippet
+from typing import Optional, Union, List # Asegúrate de que 'Union' y 'List' estén aquí
 import shutil
 import os
 from pathlib import Path
 
-# --- NUEVAS IMPORTACIONES PARA ESTADÍSTICAS Y RELACIONES ---
-from sqlalchemy import func # Para funciones de agregación como count, sum, avg
-from sqlalchemy.orm import selectinload # Para cargar relaciones en las consultas de jugadores
-# ------------------------------------------------------------
+from sqlalchemy import func # <-- ¡Añade esta línea para funciones de agregación!
+from sqlalchemy.orm import selectinload # <-- ¡Añade esta línea para cargar relaciones!
 
 from fastapi.templating import Jinja2Templates
 
@@ -37,17 +35,22 @@ router = APIRouter(prefix="/frontend")
 print("✅ frontend_routers.py cargado correctamente")
 
 # ---------------- RUTAS PÚBLICAS (ACCESO DESDE main.py) ------------------------
-# Mantengo tu ruta de índice aquí, aunque es común que esté en main.py sin prefijo.
+
+# NOTA: Si este router tiene un prefix="/frontend", entonces la ruta "/" interna
+# de este router se traduce a "/frontend/". Si tu index está en la raíz del dominio,
+# esta función debería estar en main.py sin prefijo o usar url_for con 'name' definido en main.py.
+# Para propósitos de este archivo, la dejamos aquí asumiendo que /frontend/ es el inicio del frontend.
 @router.get("/", response_class=HTMLResponse, tags=["Público"])
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 #---------------------------- PLAYERS --------------------------------------------------------------------------
 @router.get("/players/view", response_class=HTMLResponse, tags=["Frontend Player"])
 def show_players(request: Request, session: Session = Depends(get_session)):
-    # ACTUALIZADO: Cargar la relación 'team' para poder mostrar el nombre del equipo en la vista
+    # ¡IMPORTANTE! Cargar la relación 'team' para poder mostrar el nombre del equipo
     players = session.exec(select(Player).options(selectinload(Player.team))).all()
-    teams = session.exec(select(Team)).all()
+    teams = session.exec(select(Team)).all() # Necesario para el dropdown del formulario
     return templates.TemplateResponse("players.html", {"request": request, "players": players, "teams": teams})
 
 @router.get("/players/search", response_class=HTMLResponse, tags=["Frontend Player"])
@@ -57,12 +60,13 @@ def search_players(
     team_id: Optional[Union[int, str]] = None,
     session: Session = Depends(get_session)
 ):
-    # ACTUALIZADO: Cargar la relación 'team' también en la búsqueda para consistencia
+    # ¡IMPORTANTE! Cargar la relación 'team' para poder mostrar el nombre del equipo en los resultados
     query = select(Player).options(selectinload(Player.team))
 
     if name:
         query = query.where(Player.name.ilike(f"%{name}%"))
 
+    # Convertir "" a None para team_id
     if isinstance(team_id, str) and team_id == "":
         team_id = None
     elif isinstance(team_id, str):
@@ -75,11 +79,14 @@ def search_players(
         query = query.where(Player.team_id == team_id)
 
     players = session.exec(query).all()
-    teams = session.exec(select(Team)).all()
+    teams = session.exec(select(Team)).all()  # Para el formulario
     return templates.TemplateResponse("players.html", {"request": request, "players": players, "teams": teams})
 
 @router.get("/deleted-players/view", response_class=HTMLResponse, tags=["Frontend Player"])
 def show_deleted_players(request: Request, session: Session = Depends(get_session)):
+    # También es una buena práctica cargar la relación del equipo aquí si la tabla deleted_players tiene team_id
+    # players = session.exec(select(DeletedPlayer).options(selectinload(DeletedPlayer.team))).all()
+    # (Asumiendo que DeletedPlayer tiene una relación a Team si team_id se mantiene)
     players = session.exec(select(DeletedPlayer)).all()
     return templates.TemplateResponse("deleted_players.html", {"request": request, "players": players})
 
@@ -101,20 +108,22 @@ async def create_player_form(
     team_id: Optional[int] = Form(None),
     image: UploadFile = File(...)
 ):
-    try:
+    try: # Inicia el bloque try
         validar_extension_jpg(image)
 
         static_dir = project_root_dir / "static"
-        os.makedirs(static_dir, exist_ok=True)
+        os.makedirs(static_dir, exist_ok=True)  # Crea la carpeta si no existe
 
         image_path = static_dir / image.filename
+        # Asegúrate de que el nombre del archivo no cause problemas (ej. caracteres especiales, duplicados)
+        # Podrías generar un nombre único si es necesario, pero por ahora usamos el original
         with open(image_path, "wb") as buffer:
             buffer.write(await image.read())
 
-        image_url = f"/static/{image.filename}"
+        image_url = f"/static/{image.filename}" # La URL para el navegador
 
         team = None
-        if team_id is not None:
+        if team_id is not None: # Solo intenta buscar el equipo si se proporcionó un team_id
             team = session.get(Team, team_id)
             if not team:
                 raise HTTPException(status_code=400, detail=f"El team_id {team_id} no existe")
@@ -124,7 +133,7 @@ async def create_player_form(
             gamertag=gamertag,
             kills=kills,
             deaths=deaths,
-            team_id=team_id,
+            team_id=team_id, # Esto puede ser None si no se seleccionó un equipo
             image_url=image_url
         )
 
@@ -132,18 +141,23 @@ async def create_player_form(
         session.commit()
         session.refresh(db_player)
 
+        # Log para depuración
         print(f"DEBUG: Jugador '{db_player.name}' (ID: {db_player.id}) creado exitosamente. Redirigiendo...")
 
         return RedirectResponse("/frontend/players/view", status_code=303)
 
     except HTTPException as e:
-        session.rollback()
+        # Esto captura las excepciones lanzadas por validar_extension_jpg o por la no existencia del team_id
+        session.rollback() # Asegúrate de hacer rollback si algo falla antes del commit final
         print(f"ERROR: HTTPException al crear jugador: {e.detail}")
-        raise e
+        raise e # Re-lanza la excepción para que FastAPI la maneje y muestre al usuario
 
     except Exception as e:
-        session.rollback()
+        # Esto capturará cualquier otro error inesperado (ej. problemas de DB, escritura de archivo)
+        session.rollback() # Importante: si hay un error, haz rollback
         print(f"ERROR: Error inesperado al crear jugador: {e}")
+        # Puedes redirigir a una página de error o mostrar un mensaje genérico
+        # Para depuración, es mejor lanzar una HTTPException 500
         raise HTTPException(status_code=500, detail=f"Error interno del servidor al crear jugador: {e}")
 
 
@@ -175,6 +189,7 @@ def restore_deleted_player(player_id: int, session: Session = Depends(get_sessio
     if not player:
         raise HTTPException(status_code=404, detail="Jugador eliminado no encontrado")
 
+    # Validar si el equipo existe antes de restaurar (modo estricto)
     if player.team_id:
         team = session.get(Team, player.team_id)
         if not team:
@@ -224,7 +239,7 @@ async def update_player_form(
     image: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session)
 ):
-    try:
+    try: # Inicia el bloque try
         player = session.get(Player, player_id)
         if not player:
             raise HTTPException(status_code=404, detail="Jugador no encontrado.")
@@ -284,6 +299,7 @@ def search_teams(
     if name:
         query = query.where(Team.name.ilike(f"%{name}%"))
 
+    # Convertir "" a None para championships
     if isinstance(championships, str) and championships == "":
         championships = None
     elif isinstance(championships, str):
@@ -314,7 +330,7 @@ async def create_team_form(
     image: UploadFile = File(...),
     session: Session = Depends(get_session)
 ):
-    try:
+    try: # Inicia el bloque try
         validar_extension_jpg(image)
 
         static_dir = project_root_dir / "static"
@@ -351,6 +367,7 @@ async def create_team_form(
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {e}")
 
 
+# ÚNICA FUNCIÓN delete_team_frontend - la duplicada ha sido eliminada.
 @router.post("/teams/delete/{team_id}", tags=["Frontend Teams"])
 def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
     team = session.get(Team, team_id)
@@ -379,11 +396,18 @@ def delete_team_frontend(team_id: int, session: Session = Depends(get_session)):
 @router.post("/teams/restore/{team_id}", tags=["Frontend Teams"])
 def restore_deleted_team(team_id: int, session: Session = Depends(get_session)):
     try:
-        team = session.get(DeletedTeam, team_id)
+        team = session.get(DeletedTeam, team_id) # Busca en DeletedTeam
         if not team:
             raise HTTPException(status_code=404, detail="Equipo eliminado no encontrado.")
 
-        restored_team = Team(
+        # Opcional: Validar si el equipo ya existe en la tabla de Team principal con el mismo ID
+        # Esto es importante si el ID no es auto-generado al restaurar o si hay UNIQUE constraints por nombre
+        # Si el ID es una PK y se reutiliza, y SQLModel maneja bien los IDs, esta parte puede ser omitida.
+        # current_team = session.get(Team, team_id)
+        # if current_team:
+        #     raise HTTPException(status_code=400, detail=f"El equipo con ID {team_id} ya existe en la tabla principal.")
+
+        restored_team = Team( # Crea una nueva instancia del modelo Team
             id=team.id,
             name=team.name,
             region=team.region,
@@ -391,8 +415,8 @@ def restore_deleted_team(team_id: int, session: Session = Depends(get_session)):
             image_url=team.image_url
         )
 
-        session.add(restored_team)
-        session.delete(team)
+        session.add(restored_team) # Añade a la tabla Team
+        session.delete(team) # Elimina de la tabla DeletedTeam
         session.commit()
         print(f"DEBUG: Equipo '{restored_team.name}' (ID: {restored_team.id}) restaurado exitosamente.")
         return RedirectResponse(url="/frontend/teams/view", status_code=303)
@@ -417,6 +441,7 @@ def delete_team_permanently(team_id: int, session: Session = Depends(get_session
     session.commit()
     return RedirectResponse(url="/frontend/teams/deleted/view", status_code=303)
 
+# GET: Mostrar formulario de edición
 @router.get("/teams/edit/{team_id}", response_class=HTMLResponse, tags=["Frontend Teams"])
 def edit_team_form(team_id: int, request: Request, session: Session = Depends(get_session)):
     team = session.get(Team, team_id)
@@ -424,6 +449,8 @@ def edit_team_form(team_id: int, request: Request, session: Session = Depends(ge
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
     return templates.TemplateResponse("edit_team.html", {"request": request, "team": team})
 
+
+# POST: Procesar formulario de edición
 @router.post("/teams/edit/{team_id}", tags=["Frontend Teams"])
 async def update_team_form(
     team_id: int,
@@ -433,7 +460,7 @@ async def update_team_form(
     image: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session)
 ):
-    try:
+    try: # Inicia el bloque try
         team = session.get(Team, team_id)
         if not team:
             raise HTTPException(status_code=404, detail="Equipo no encontrado")
@@ -483,49 +510,3 @@ def planning_info(request: Request):
 @router.get("/docs/design", response_class=HTMLResponse, tags=["Documentación"])
 def design_info(request: Request):
     return templates.TemplateResponse("design_info.html", {"request": request})
-
-# ---------------- APARTADO DE ESTADÍSTICAS ------------------------
-
-@router.get("/estadisticas", response_class=HTMLResponse, tags=["Estadísticas"])
-def show_statistics(request: Request, session: Session = Depends(get_session)):
-    stats = {}
-
-    # 1. Total de jugadores
-    # Usar .scalar_one() si esperas siempre un número (incluso 0 si no hay jugadores)
-    stats['total_jugadores'] = session.exec(select(func.count(Player.id))).scalar_one()
-
-    # 2. Total de equipos
-    stats['total_equipos'] = session.exec(select(func.count(Team.id))).scalar_one()
-
-    # 3. Jugador con más kills (manejo de caso sin jugadores)
-    top_player_kills = session.exec(select(Player).order_by(Player.kills.desc()).limit(1)).first()
-    stats['jugador_mas_kills_nombre'] = top_player_kills.name if top_player_kills else "N/A"
-    stats['jugador_mas_kills_valor'] = top_player_kills.kills if top_player_kills else 0
-
-    # 4. Jugador con más muertes (manejo de caso sin jugadores)
-    top_player_deaths = session.exec(select(Player).order_by(Player.deaths.desc()).limit(1)).first()
-    stats['jugador_mas_deaths_nombre'] = top_player_deaths.name if top_player_deaths else "N/A"
-    stats['jugador_mas_deaths_valor'] = top_player_deaths.deaths if top_player_deaths else 0
-
-    # 5. Equipo con más campeonatos (manejo de caso sin equipos)
-    top_team_championships = session.exec(select(Team).order_by(Team.championships.desc()).limit(1)).first()
-    stats['equipo_mas_campeonatos_nombre'] = top_team_championships.name if top_team_championships else "N/A"
-    stats['equipo_mas_campeonatos_valor'] = top_team_championships.championships if top_team_championships else 0
-
-    # 6. Promedio de Kills por jugador
-    # Usar .scalar_one_or_none() porque sum() puede devolver None si no hay filas
-    total_kills = session.exec(select(func.sum(Player.kills))).scalar_one_or_none() or 0
-    total_players_for_avg = stats['total_jugadores'] # Reutilizamos el total de jugadores ya calculado
-    stats['promedio_kills_por_jugador'] = round(total_kills / total_players_for_avg, 2) if total_players_for_avg > 0 else 0.0
-
-    # 7. Promedio de Deaths por jugador
-    total_deaths = session.exec(select(func.sum(Player.deaths))).scalar_one_or_none() or 0
-    stats['promedio_deaths_por_jugador'] = round(total_deaths / total_players_for_avg, 2) if total_players_for_avg > 0 else 0.0
-
-    # 8. K/D Ratio promedio de todos los jugadores
-    if total_deaths > 0:
-        stats['promedio_kd_ratio'] = round(total_kills / total_deaths, 2)
-    else:
-        stats['promedio_kd_ratio'] = "∞" # Infinito si no hay muertes (o no hay jugadores con muertes)
-
-    return templates.TemplateResponse("estadisticas.html", {"request": request, "stats": stats})
