@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session, select
-from typing import Optional
+from typing import Optional, Union
 import shutil
 import os
 from pathlib import Path
@@ -42,19 +42,29 @@ def show_players(request: Request, session: Session = Depends(get_session)):
 def search_players(
     request: Request,
     name: Optional[str] = None,
-    team_id: Optional[int] = None,
+    # Cambiamos team_id a Optional[Union[int, str]] para aceptar "" y luego lo convertimos a None
+    team_id: Optional[Union[int, str]] = None, # <--- CAMBIO AQUÍ
     session: Session = Depends(get_session)
 ):
     query = select(Player)
 
-    if name:
+    if name: # Esto ya funciona bien con cadenas vacías para 'name'
         query = query.where(Player.name.ilike(f"%{name}%"))
-    if team_id is not None:
+
+    # Convertir "" a None para team_id
+    if isinstance(team_id, str) and team_id == "": # Si es una cadena vacía
+        team_id = None
+    elif isinstance(team_id, str): # Si es una cadena que no está vacía (ej. "1", "2")
+        try:
+            team_id = int(team_id) # Intenta convertir a int
+        except ValueError:
+            team_id = None # Si no se puede convertir a int, lo tratamos como None
+
+    if team_id is not None: # Ahora team_id será int o None
         query = query.where(Player.team_id == team_id)
 
     players = session.exec(query).all()
     teams = session.exec(select(Team)).all()  # Para el formulario
-
     return templates.TemplateResponse("players.html", {"request": request, "players": players, "teams": teams})
 
 @router.get("/deleted-players/view", response_class=HTMLResponse, tags=["Frontend Player"])
@@ -264,13 +274,24 @@ def show_teams(request: Request, session: Session = Depends(get_session)):
 def search_teams(
     request: Request,
     name: Optional[str] = None,
-    championships: Optional[int] = None,
+    # Cambiamos championships a Optional[Union[int, str]]
+    championships: Optional[Union[int, str]] = None, # <--- CAMBIO AQUÍ
     session: Session = Depends(get_session)
 ):
     query = select(Team)
     if name:
         query = query.where(Team.name.ilike(f"%{name}%"))
-    if championships is not None:
+
+    # Convertir "" a None para championships
+    if isinstance(championships, str) and championships == "": # Si es una cadena vacía
+        championships = None
+    elif isinstance(championships, str): # Si es una cadena que no está vacía (ej. "1", "2")
+        try:
+            championships = int(championships) # Intenta convertir a int
+        except ValueError:
+            championships = None # Si no se puede convertir a int, lo tratamos como None
+
+    if championships is not None: # Ahora championships será int o None
         query = query.where(Team.championships == championships)
     teams = session.exec(query).all()
     return templates.TemplateResponse("teams.html", {"request": request, "teams": teams})
