@@ -40,10 +40,6 @@ app.include_router(router)
 def on_startup():
     create_db_and_tables()
 
-@app.get("/", response_class=HTMLResponse, tags=["General"])
-async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
 @app.delete("/reset-all", tags=["General"])
 def reset_all(session: Session = Depends(get_session)):
     session.exec(text("DELETE FROM player"))
