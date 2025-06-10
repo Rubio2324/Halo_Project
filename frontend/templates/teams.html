@@ -5,7 +5,6 @@
 {% block content %}
 <h2>Lista de Equipos</h2>
 
-<!-- 🔔 Alerta por error en la URL -->
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const errorMessage = urlParams.get("error");
@@ -16,9 +15,9 @@
 </script>
 
 <h4>🔍 Buscar equipos</h4>
-<form method="get" action="/frontend/players/search">
+<form method="get" action="/frontend/teams/search"> {# Corregido a /frontend/teams/search si tienes un endpoint de búsqueda de equipos #}
     <input type="text" name="name" placeholder="Buscar por nombre">
-    <input type="number" name="team_id" placeholder="ID del equipo">
+    <input type="number" name="championships" placeholder="Campeonatos ganados"> {# Cambiado a 'championships' para buscar equipos #}
     <button type="submit">🔍 Buscar</button>
 </form>
 <br>
@@ -50,7 +49,8 @@
             <form method="post" action="/frontend/teams/delete/{{ team.id }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este equipo y enviarlo al historial?');">
                 <button type="submit">🗑️ Eliminar</button>
             </form>
-            <a href="/frontend/teams/update/{{ team.id }}">
+            {# CORRECCIÓN IMPORTANTE AQUÍ: Cambiado 'teams/update' a 'teams/edit' #}
+            <a href="/frontend/teams/edit/{{ team.id }}">
                 <button>✏️ Editar</button>
             </a>
         </td>
